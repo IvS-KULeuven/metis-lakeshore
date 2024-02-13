@@ -9,17 +9,17 @@ timeout = 1
 ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
-
-    # write intype
-    message = "INTYPE 1,1,1,0,0,1,1\n"
+    message = f"PROFINUM 2\n"
+    ser.write(message.encode())
+    
+    message = f"PROFISLOT 2,2,1\n"
     ser.write(message.encode())
 
-    # read intype
-    message = "INTYPE? 1\n"
+    message = f"PROFISLOT? 2\n"
     ser.write(message.encode())
 
     data = ser.read(1024).decode()
-    print(f"Curve Header: {data}")
+    print(f"PROFISLOT: {data}")
 
 except serial.SerialException as e:
     print(f"Error: {e}")

@@ -9,17 +9,19 @@ timeout = 1
 ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
+    # Write header to the port
+    address = 2  # Specify the input curve number
 
-    # write intype
-    message = "INTYPE 1,1,1,0,0,1,1\n"
+    message = f"ADDR {address}\n"
     ser.write(message.encode())
 
-    # read intype
-    message = "INTYPE? 1\n"
+    # Write header query
+    message = f"ADDR? \n"
     ser.write(message.encode())
 
+    # Read data from the port
     data = ser.read(1024).decode()
-    print(f"Curve Header: {data}")
+    print(f"address: {data}")
 
 except serial.SerialException as e:
     print(f"Error: {e}")

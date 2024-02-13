@@ -9,18 +9,12 @@ timeout = 1
 ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
-
-    # write intype
-    message = "INTYPE 1,1,1,0,0,1,1\n"
-    ser.write(message.encode())
-
-    # read intype
-    message = "INTYPE? 1\n"
-    ser.write(message.encode())
-
-    data = ser.read(1024).decode()
-    print(f"Curve Header: {data}")
-
+    for row in range(8):
+        input_number = row + 1
+        message = f"CRVHDR? {input_number}\n"
+        ser.write(message.encode())
+        name = ser.read(1024).decode().strip()
+        print(name)
 except serial.SerialException as e:
     print(f"Error: {e}")
 

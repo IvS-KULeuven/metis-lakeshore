@@ -14,7 +14,7 @@ try:
     name = "LSCI_PT-100"  # Curve name limited to 15 characters
     serial_number = "Standard C"  # Curve serial number limited to 10 characters
     format_code = 3  # Format code for resistance versus temperature
-    limit_value = 810.0  # Upper temperayture limit in Kelvin
+    limit_value = 810  # Upper temperayture limit in Kelvin
     coefficient = 2  # Positive temperature coefficient
 
     message = f"CRVHDR {input_number},{name},{serial_number},{format_code},{limit_value},{coefficient}\n"
