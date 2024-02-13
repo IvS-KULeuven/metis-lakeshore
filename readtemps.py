@@ -10,13 +10,12 @@ ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
   # Write data to the port
-  for i in range(10):
-    message = "KRDG? 0\n"
-    ser.write(message.encode())  # Convert to bytes for sending
+  message = "KRDG? 0\n"
+  ser.write(message.encode())  # Convert to bytes for sending
 
-    # Read data from the port
-    data = ser.read(1024).decode()  # Read up to 1024 bytes and decode
-    print(f"Received in Kelvin: {data}")
+  # Read data from the port
+  data = ser.read(1024).decode()  # Read up to 1024 bytes and decode
+  print(f"Received in Kelvin: {data}")
   
 except serial.SerialException as e:
   print(f"Error: {e}")
