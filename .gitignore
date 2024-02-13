@@ -1,0 +1,25 @@
+# Virtual environment directory
+env/
+
+# IDE-specific temporary files
+*.swp
+*.pyc
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts and output files
+build/
+dist/
+output/
+
+# Logs and temporary data
+*.log
+*.tmp
+
+# System-specific configuration files
+local_settings.py  # Replace with your actual filename
+
+# Test-related files
+__pycache__/
+*.pytest.ini
+*.pylint.cfg
