@@ -59,11 +59,11 @@ class TemperatureWindow(QWidget):
 
         # Populate table with sample data
         for row in range(8):
-            self.table_widget.setItem(row, 0, QTableWidgetItem(""))  # Set item in first column
-            self.table_widget.setItem(row, 1, QTableWidgetItem("0"))  # Set item in second column
-            self.table_widget.setItem(row, 2, QTableWidgetItem(""))  # Set item in third column
-            self.table_widget.setItem(row, 3, QTableWidgetItem(""))  # Set item in fourth column
-            self.table_widget.setItem(row, 4, QTableWidgetItem(""))  # Set item in fifth column
+            self.table_widget.setItem(row, 0, QTableWidgetItem(""))
+            self.table_widget.setItem(row, 1, QTableWidgetItem("0"))
+            self.table_widget.setItem(row, 2, QTableWidgetItem(""))
+            self.table_widget.setItem(row, 3, QTableWidgetItem(""))
+            self.table_widget.setItem(row, 4, QTableWidgetItem(""))
 
         # Set size policy to expand vertically
         self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -154,8 +154,8 @@ class TemperatureWindow(QWidget):
             self.ser.write(message.encode())
 
             # Read temperature data from the port
-            data = self.ser.read(1024).decode().strip()  # Read up to 1024 bytes and decode
-            temperatures = data.split(",")[:8]  # Extract the first 8 temperatures
+            data = self.ser.read(1024).decode().strip()
+            temperatures = data.split(",")[:8]
 
             # Update table with formatted temperatures
             for row, temp in enumerate(temperatures):
