@@ -1,64 +1,60 @@
 import PySide6
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox
 from PySide6.QtCore import Qt, QTimer
 import serial
 
 class TemperatureWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout()
 
-        # Create a label for general information
+        self.layout = QHBoxLayout(self)
+
+        # Left layout for general information
+        self.left_layout = QVBoxLayout()
+
+        # General section frame
+        self.general_section_frame = QFrame()
+        self.general_section_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
+        self.general_section_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # General section grid layout
+        self.general_section_layout = QGridLayout(self.general_section_frame)
+
+        # General label
         self.general_label = QLabel("<b>General</b>")
         self.general_label.setStyleSheet("font-size: 14pt;")
-        self.layout.addWidget(self.general_label)
 
-        # Create a container widget for the grid layout
-        self.grid_container = QFrame()
-        self.grid_container.setFrameStyle(QFrame.Panel | QFrame.Plain)
-        self.grid_container.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        # Create a grid layout for labels inside the container
-        self.labels_layout = QGridLayout()
-        self.labels_layout.setVerticalSpacing(10)
-        self.labels_layout.setHorizontalSpacing(10)
-
-        # Create a combo box for selecting brightness levels
-        self.brightness_combobox = QComboBox()
-        self.brightness_combobox.addItems(["Off", "Low", "Medium", "High", "Max"])
-        self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
-
-        # Create labels for displaying information
+        # Labels for general information
         self.module_name_label = QLineEdit()
         self.serial_number_label = QLabel()
         self.firmware_version_label = QLabel()
-        self.brightness_label = self.brightness_combobox
+        self.brightness_combobox = QComboBox()
+        self.brightness_combobox.addItems(["Off", "Low", "Medium", "High", "Max"])
 
-        # Set size policy for QLineEdit
-        self.module_name_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        # Add labels to general grid layout
+        self.general_section_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
+        self.general_section_layout.addWidget(self.module_name_label, 0, 1)
+        self.general_section_layout.addWidget(QLabel("<b>Serial Number</b>"), 1, 0)
+        self.general_section_layout.addWidget(self.serial_number_label, 1, 1)
+        self.general_section_layout.addWidget(QLabel("<b>Firmware Version</b>"), 2, 0)
+        self.general_section_layout.addWidget(self.firmware_version_label, 2, 1)
+        self.general_section_layout.addWidget(QLabel("<b>Screen Brightness</b>"), 3, 0)
+        self.general_section_layout.addWidget(self.brightness_combobox, 3, 1)
 
-        # Add labels to grid layout inside the container
-        self.labels_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
-        self.labels_layout.addWidget(QLabel("<b>Serial Number</b>"), 1, 0)
-        self.labels_layout.addWidget(QLabel("<b>Firmware Version</b>"), 2, 0)
-        self.labels_layout.addWidget(QLabel("<b>Screen Brightness</b>"), 3, 0)
-        self.labels_layout.addWidget(self.module_name_label, 0, 1)
-        self.labels_layout.addWidget(self.serial_number_label, 1, 1)
-        self.labels_layout.addWidget(self.firmware_version_label, 2, 1)
-        self.labels_layout.addWidget(self.brightness_label, 3, 1)
+        # Profibus communication section
+        self.profibus_label = QLabel("<b>PROFIBUS communication</b>")
+        self.profibus_label.setStyleSheet("font-size: 14pt;")
 
-        # Set the grid layout inside the container
-        self.grid_container.setLayout(self.labels_layout)
+        # Add sections to general layout
+        self.left_layout.addWidget(self.general_label)
+        self.left_layout.addWidget(self.general_section_frame)
+        self.left_layout.addWidget(self.profibus_label)
 
-        # Add the container to the main layout
-        self.layout.addWidget(self.grid_container)
-
-        # Create the table widget
+        # Right layout for temperature table
+        self.right_layout = QVBoxLayout()
         self.table_widget = QTableWidget()
         self.table_widget.setColumnCount(5)
         self.table_widget.setRowCount(8)
-
-        # Set column headers
         self.table_widget.setHorizontalHeaderLabels(["Name", "Temperature", "Sensor units", "Excitation", "Power"])
 
         # Populate table with sample data
@@ -69,38 +65,29 @@ class TemperatureWindow(QWidget):
             self.table_widget.setItem(row, 3, QTableWidgetItem(""))  # Set item in fourth column
             self.table_widget.setItem(row, 4, QTableWidgetItem(""))  # Set item in fifth column
 
-        # Set size policy to fixed
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
         # Set size policy to expand vertically
         self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Set vertical header to resize to contents
         self.table_widget.verticalHeader().setSectionResizeMode(PySide6.QtWidgets.QHeaderView.ResizeToContents)
 
-        self.layout.addWidget(self.table_widget)
-        self.setLayout(self.layout)
+        # Add table to right layout
+        self.right_layout.addWidget(self.table_widget)
 
-        # Configure serial port settings
+        # Add left and right layouts to main layout
+        self.layout.addLayout(self.left_layout)
+        self.layout.addLayout(self.right_layout)
+
+        # Set serial port settings and read data
         self.port = '/dev/ttyUSB0'
         self.baudrate = 115200
         self.timeout = 1
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-
-        # Read general information
         self.read_general_information()
         self.read_brightness()
-
-        # Read names of inputs
         self.read_input_names()
-
-        # Read temperatures
         self.read_temperature()
-
-        # Read sensor units
         self.read_sensor_units()
-
-        # Read curves
         self.read_curves()
 
         # Start timer for updating temperature
@@ -109,9 +96,9 @@ class TemperatureWindow(QWidget):
         self.timer.timeout.connect(self.read_temperature)
         self.timer.start()
 
-        # Connect signal for name change
+        # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
-        self.module_name_label.focusOutEvent = self.clear_focus
+        self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
 
     def read_general_information(self):
         try:
@@ -148,7 +135,6 @@ class TemperatureWindow(QWidget):
 
         except serial.SerialException as e:
             print(f"Error: {e}")
-
 
     def read_input_names(self):
         try:
@@ -220,10 +206,6 @@ class TemperatureWindow(QWidget):
         new_name = self.module_name_label.text()
         message = f"MODNAME {new_name}\n"
         self.ser.write(message.encode())
-
-    def clear_focus(self, event):
-        self.module_name_label.clearFocus()
-        self.adjustSize()
 
     def handle_brightness_change(self, index):
         selected_brightness = self.brightness_combobox.currentIndex()
