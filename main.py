@@ -45,10 +45,26 @@ class TemperatureWindow(QWidget):
         self.profibus_label = QLabel("<b>PROFIBUS communication</b>")
         self.profibus_label.setStyleSheet("font-size: 14pt;")
 
+        # New QFrame for PROFIBUS communication
+        self.profibus_frame = QFrame()
+        self.profibus_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
+        self.profibus_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Grid layout for PROFIBUS communication
+        self.profibus_layout = QGridLayout(self.profibus_frame)
+        self.profibus_layout.addWidget(QLabel("<b>Address</b>"), 0, 0)
+        self.address_line_edit = QLineEdit()
+        self.profibus_layout.addWidget(self.address_line_edit, 0, 1)
+        self.profibus_layout.addWidget(QLabel("<b>Slot Count</b>"), 1, 0)
+        self.slot_count_combobox = QComboBox()
+        self.slot_count_combobox.addItems([str(i) for i in range(1, 9)])
+        self.profibus_layout.addWidget(self.slot_count_combobox, 1, 1)
+
         # Add sections to general layout
         self.left_layout.addWidget(self.general_label)
         self.left_layout.addWidget(self.general_section_frame)
         self.left_layout.addWidget(self.profibus_label)
+        self.left_layout.addWidget(self.profibus_frame)
 
         # Right layout for temperature table
         self.right_layout = QVBoxLayout()
@@ -89,6 +105,8 @@ class TemperatureWindow(QWidget):
         self.read_temperature()
         self.read_sensor_units()
         self.read_curves()
+        self.read_address()
+        self.read_slot_count()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
@@ -98,7 +116,10 @@ class TemperatureWindow(QWidget):
 
         # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
+        self.address_line_edit.editingFinished.connect(self.handle_address_change)
+
         self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
+        self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
 
     def read_general_information(self):
         try:
@@ -201,16 +222,48 @@ class TemperatureWindow(QWidget):
 
         except serial.SerialException as e:
             print(f"Error: {e}")
+    
+    def read_address(self):
+        try:
+            message = "ADDR?\n"
+            self.ser.write(message.encode())
+            address = self.ser.read(1024).decode().strip()
+            self.address_line_edit.setText(address)
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
+
+    def read_slot_count(self):
+        try:
+            message = "PROFINUM?\n"
+            self.ser.write(message.encode())
+            value = int(self.ser.read(1024).decode().strip())
+            self.slot_count_combobox.setCurrentIndex(value)
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
 
     def handle_module_name_change(self):
         new_name = self.module_name_label.text()
         message = f"MODNAME {new_name}\n"
         self.ser.write(message.encode())
 
+    def handle_address_change(self):
+        new_address = int(self.address_line_edit.text())
+        message = f"ADDR {new_address}\n"
+        self.ser.write(message.encode())
+
     def handle_brightness_change(self, index):
         selected_brightness = self.brightness_combobox.currentIndex()
         message = f"BRIGT {selected_brightness}\n"
         self.ser.write(message.encode())
+    
+    def handle_slot_count_change(self, index):
+        selected_slot = self.slot_count_combobox.currentIndex()
+        message = f"PROFINUM {selected_slot}\n"
+        self.ser.write(message.encode())
+    
+
 
 if __name__ == "__main__":
     app = QApplication([])
