@@ -51,7 +51,8 @@ class TemperatureWindow(QWidget):
         self.profibus_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Grid layout for PROFIBUS communication
-        self.profibus_layout = QGridLayout(self.profibus_frame)
+        self.profibus_layout = QGridLayout()
+        self.profibus_frame.setLayout(self.profibus_layout)
         self.profibus_layout.addWidget(QLabel("<b>Address</b>"), 0, 0)
         self.address_line_edit = QLineEdit()
         self.profibus_layout.addWidget(self.address_line_edit, 0, 1)
@@ -59,6 +60,34 @@ class TemperatureWindow(QWidget):
         self.slot_count_combobox = QComboBox()
         self.slot_count_combobox.addItems([str(i) for i in range(1, 9)])
         self.profibus_layout.addWidget(self.slot_count_combobox, 1, 1)
+
+        # Add an empty row
+        self.profibus_layout.addWidget(QLabel(""), 2, 0)
+
+        # Header labels
+        self.profibus_layout.addWidget(QLabel("<b>Channel</b>"), 3, 1)
+        self.profibus_layout.addWidget(QLabel("<b>Units</b>"), 3, 2)
+
+        # Labels for Slot1-8
+        for i in range(1, 9):
+            self.profibus_layout.addWidget(QLabel(f"Slot{i}"), i + 3, 0)
+
+        # Comboboxes for Channel
+        self.channel_comboboxes = []
+        for i in range(1, 9):
+            channel_combobox = QComboBox()
+            channel_combobox.addItems([str(j) for j in range(1, 9)])
+            self.channel_comboboxes.append(channel_combobox)
+            self.profibus_layout.addWidget(channel_combobox, i + 3, 1)
+
+        # Comboboxes for Units
+        self.units_comboboxes = []
+        for i in range(1, 9):
+            units_combobox = QComboBox()
+            units_combobox.addItems(["Kelvin", "Celsius", "sensor", "Fahrenheit"])
+            self.units_comboboxes.append(units_combobox)
+            self.profibus_layout.addWidget(units_combobox, i + 3, 2)
+
 
         # Add sections to general layout
         self.left_layout.addWidget(self.general_label)
@@ -107,6 +136,7 @@ class TemperatureWindow(QWidget):
         self.read_curves()
         self.read_address()
         self.read_slot_count()
+        self.read_slots()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
@@ -117,9 +147,13 @@ class TemperatureWindow(QWidget):
         # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
         self.address_line_edit.editingFinished.connect(self.handle_address_change)
-
         self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
         self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
+        # Connect signals for channel and unit comboboxes
+        for i in range(8):
+            self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+
 
     def read_general_information(self):
         try:
@@ -242,6 +276,19 @@ class TemperatureWindow(QWidget):
 
         except serial.SerialException as e:
             print(f"Error: {e}")
+    
+    def read_slots(self):
+        try:
+            for row in range(8):
+                input_number = row + 1
+                message = f"PROFISLOT? {input_number}\n"
+                self.ser.write(message.encode())
+                data = self.ser.read(1024).decode().strip().split(",")[:2]
+                self.channel_comboboxes[row].setCurrentIndex(int(data[0])-1)
+                self.units_comboboxes[row].setCurrentIndex(int(data[1])-1)
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
 
     def handle_module_name_change(self):
         new_name = self.module_name_label.text()
@@ -263,7 +310,26 @@ class TemperatureWindow(QWidget):
         message = f"PROFINUM {selected_slot}\n"
         self.ser.write(message.encode())
     
+    def handle_channel_unit_change(self):
+        # Get the index of the combobox that triggered the change
+        sender_combobox = self.sender()
 
+        # Get the row number of the combobox in the layout
+        row = self.profibus_layout.getItemPosition(self.profibus_layout.indexOf(sender_combobox))[0]
+
+        # Get the input number corresponding to the row
+        input_number = row - 3  # Offset by 3 to account for the header rows
+
+        # Get the index of the channel and unit comboboxes
+        channel_index = self.channel_comboboxes[input_number-1].currentIndex()
+        unit_index = self.units_comboboxes[input_number-1].currentIndex()
+
+        # Call the function that requires both channel and unit indices
+        self.handle_comboboxes_change(input_number, channel_index, unit_index)
+
+    def handle_comboboxes_change(self, input_number, channel_index, unit_index):
+        message = f"PROFISLOT {input_number},{channel_index+1},{unit_index+1}\n"
+        self.ser.write(message.encode())
 
 if __name__ == "__main__":
     app = QApplication([])
