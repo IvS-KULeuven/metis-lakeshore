@@ -1,5 +1,5 @@
 import PySide6
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton
 from PySide6.QtCore import Qt, QTimer
 import serial
 
@@ -24,6 +24,10 @@ class TemperatureWindow(QWidget):
         self.general_label = QLabel("<b>General</b>")
         self.general_label.setStyleSheet("font-size: 14pt;")
 
+        # Restore factory settings button
+        self.restore_button = QPushButton("Restore factory settings")
+        self.restore_button.clicked.connect(self.restore_factory_settings)
+
         # Labels for general information
         self.module_name_label = QLineEdit()
         self.serial_number_label = QLabel()
@@ -40,6 +44,7 @@ class TemperatureWindow(QWidget):
         self.general_section_layout.addWidget(self.firmware_version_label, 2, 1)
         self.general_section_layout.addWidget(QLabel("<b>Screen Brightness</b>"), 3, 0)
         self.general_section_layout.addWidget(self.brightness_combobox, 3, 1)
+        self.general_section_layout.addWidget(self.restore_button, 4, 0, 1, 2)
 
         # Profibus communication section
         self.profibus_label = QLabel("<b>PROFIBUS communication</b>")
@@ -329,6 +334,10 @@ class TemperatureWindow(QWidget):
 
     def handle_comboboxes_change(self, input_number, channel_index, unit_index):
         message = f"PROFISLOT {input_number},{channel_index+1},{unit_index+1}\n"
+        self.ser.write(message.encode())
+    
+    def restore_factory_settings(self):
+        message = f"DFLT 99\n"
         self.ser.write(message.encode())
 
 if __name__ == "__main__":
