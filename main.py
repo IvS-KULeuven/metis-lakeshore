@@ -214,6 +214,7 @@ class TemperatureWindow(QWidget):
         self.read_address()
         self.read_slot_count()
         self.read_slots()
+        self.read_sensor_setup()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
@@ -518,6 +519,70 @@ class TemperatureWindow(QWidget):
                     widget = self.sensor_layout.itemAtPosition(row, col).widget()
                     widget.setEnabled(True)
                     widget.setStyleSheet("")
+
+                    message = f"INTYPE? <input>\n"
+                    self.ser.write(message.encode())
+
+    def read_sensor_setup(self):
+        try:
+            for row in range(8):  # Adjust the loop to start from 0
+                input_number = row + 1
+                message = f"INTYPE? {input_number}\n"
+                self.ser.write(message.encode())
+                response = self.ser.read(1024).decode().strip()
+                print(response)
+
+                # Parse the response
+                sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
+
+                # Update the QComboBoxes based on the parsed values
+                power_combo_box =self.sensor_layout.itemAtPosition(row + 1, 0).widget()
+                type_combo_box = self.sensor_layout.itemAtPosition(row + 1, 2).widget()
+                autorange_combo_box = self.sensor_layout.itemAtPosition(row + 1, 4).widget()
+                range_combo_box = self.sensor_layout.itemAtPosition(row + 1, 5).widget()
+                current_reversal_combo_box = self.sensor_layout.itemAtPosition(row + 1, 3).widget()
+                display_units_combo_box = self.sensor_layout.itemAtPosition(row + 1, 6).widget()
+
+                # Update Power combo box
+                power_combo_box.setCurrentIndex(int(enabled))
+
+                # Update Type combo box
+                type_combo_box.setCurrentIndex(int(sensor_type)-1)
+
+                # Update Autorange combo box
+                autorange_combo_box.setCurrentIndex(int(autorange))
+
+                # Update Range combo box
+                range_combo_box.setCurrentIndex(int(range_val))
+
+                # Update Current Reversal combo box
+                current_reversal_combo_box.setCurrentIndex(int(current_reversal))
+
+                # Update Display Units combo box
+                display_units_combo_box.setCurrentIndex(int(units)-1)
+
+                # Update the enable/disable state of the QComboBoxes
+                
+                if int(enabled) == 0:
+                    type_combo_box.setEnabled(False)
+                    type_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                    autorange_combo_box.setEnabled(False)
+                    autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                    range_combo_box.setEnabled(False)
+                    range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                    current_reversal_combo_box.setEnabled(False)
+                    current_reversal_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                    display_units_combo_box.setEnabled(False)
+                    display_units_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                else:
+                    type_combo_box.setEnabled(True)
+                    autorange_combo_box.setEnabled(True)
+                    range_combo_box.setEnabled(True)
+                    current_reversal_combo_box.setEnabled(True)
+                    display_units_combo_box.setEnabled(True)
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
 
 
 
