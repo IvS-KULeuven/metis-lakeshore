@@ -93,12 +93,74 @@ class TemperatureWindow(QWidget):
             self.units_comboboxes.append(units_combobox)
             self.profibus_layout.addWidget(units_combobox, i + 3, 2)
 
+        # Sensor setup section
+        self.sensor_label = QLabel("<b>Sensor setup</b>")
+        self.sensor_label.setStyleSheet("font-size: 14pt;")
+
+        # New QFrame for sensor section
+        self.sensor_frame = QFrame()
+        self.sensor_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
+        self.sensor_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Grid layout for sensor section
+        self.sensor_layout = QGridLayout()
+        self.sensor_frame.setLayout(self.sensor_layout)
+
+        # Labels for sensor section
+        sensor_labels = ["Name", "Type", "Current Reversal", "Autorange", "Range", "Display Units"]
+
+        # Add labels to sensor grid layout
+        for col, label in enumerate(sensor_labels):
+            self.sensor_layout.addWidget(QLabel(f"<b>{label}</b>"), 0, col)
+
+        # Add QLineEdit for Name
+        for row in range(1, 9):
+            line_edit = QLineEdit()
+            self.sensor_layout.addWidget(line_edit, row, 0)
+
+        # Add QComboBox for Type
+        sensor_types = ["Diode", "Platinum RTD", "NTC RTD"]
+        self.type_combo_boxes = []  # Store the combo boxes in a list to access them later if needed
+        for row in range(1, 9):
+            combo_box = QComboBox()
+            combo_box.addItems(sensor_types)
+            combo_box.currentIndexChanged.connect(self.handle_type_change)
+            self.sensor_layout.addWidget(combo_box, row, 1)
+            self.type_combo_boxes.append(combo_box)
+
+        # Add QComboBox for Current Reversal and Autorange
+        on_off_values = ["Off", "On"]  # Start with "Off"
+        self.toggle_comboboxes = []  # Store the comboboxes in a list to access them later if needed
+        for row in range(1, 9):
+            for col in range(2, 4):
+                combo_box = QComboBox()
+                combo_box.addItems(on_off_values)
+                self.toggle_comboboxes.append(combo_box)
+                self.sensor_layout.addWidget(combo_box, row, col)
+
+        # Add comboboxes for Range
+        range_values = ["7.5 V (10 µA)", "1 kΩ (1 mA)", "10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)", "300 Ω (30 µA)",
+                        "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)", "30 kΩ (300 nA)", "100 kΩ (100 nA)"]
+        for row in range(1, 9):
+            combo_box = QComboBox()
+            combo_box.addItems(range_values)
+            self.sensor_layout.addWidget(combo_box, row, 4)
+
+        # Add comboboxes for Display Units
+        display_units = ["Kelvin", "Celsius", "Sensor", "Fahrenheit"]
+        for row in range(1, 9):
+            combo_box = QComboBox()
+            combo_box.addItems(display_units)
+            self.sensor_layout.addWidget(combo_box, row, 5)
+
 
         # Add sections to general layout
         self.left_layout.addWidget(self.general_label)
         self.left_layout.addWidget(self.general_section_frame)
         self.left_layout.addWidget(self.profibus_label)
         self.left_layout.addWidget(self.profibus_frame)
+        self.left_layout.addWidget(self.sensor_label)
+        self.left_layout.addWidget(self.sensor_frame)
 
         # Right layout for temperature table
         self.right_layout = QVBoxLayout()
@@ -339,6 +401,47 @@ class TemperatureWindow(QWidget):
     def restore_factory_settings(self):
         message = f"DFLT 99\n"
         self.ser.write(message.encode())
+    
+    def toggle_button_text(self):
+        button = self.sender()  # Get the button that triggered the signal
+        if button.isChecked():  # If the button is checked (On)
+            button.setText("On")
+        else:
+            button.setText("Off")
+
+    # Slot to handle type change and enforce constraints
+    def handle_type_change(self, index):
+        # Get the index of the combo box that triggered the change
+        sender_combo_box = self.sender()
+
+        # Get the row number of the combo box in the layout
+        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender_combo_box))[0]
+
+        # Get the selected type
+        selected_type = sender_combo_box.currentText()
+
+        # Get the relevant combo boxes for the current row
+        autorange_combo_box = self.toggle_comboboxes[(row - 1) * 2]
+        range_combo_box = self.sensor_layout.itemAtPosition(row, 4).widget()
+
+        # Apply constraints based on the selected type
+        if selected_type == "Diode":
+            autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
+            range_combo_box.setCurrentIndex(0)  # Set range to "7.5 V (10 µA)"
+            autorange_combo_box.setEnabled(False)  # Disable autorange
+            range_combo_box.setEnabled(False)  # Disable range
+        elif selected_type == "Platinum RTD":
+            autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
+            range_combo_box.setCurrentIndex(1)  # Set range to "1 kΩ (1 mA)"
+            autorange_combo_box.setEnabled(False)  # Disable autorange
+            range_combo_box.setEnabled(False)  # Disable range
+        else:
+            # For other types, enable autorange and range combo boxes
+            autorange_combo_box.setEnabled(True)
+            range_combo_box.setEnabled(True)
+
+
+
 
 if __name__ == "__main__":
     app = QApplication([])
