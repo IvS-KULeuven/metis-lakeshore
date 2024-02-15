@@ -409,7 +409,6 @@ class TemperatureWindow(QWidget):
         else:
             button.setText("Off")
 
-    # Slot to handle type change and enforce constraints
     def handle_type_change(self, index):
         # Get the index of the combo box that triggered the change
         sender_combo_box = self.sender()
@@ -421,26 +420,43 @@ class TemperatureWindow(QWidget):
         selected_type = sender_combo_box.currentText()
 
         # Get the relevant combo boxes for the current row
-        autorange_combo_box = self.toggle_comboboxes[(row - 1) * 2]
+        current_reversal_combo_box = self.toggle_comboboxes[(row - 1) * 2]
+        autorange_combo_box = self.toggle_comboboxes[(row - 1) * 2 + 1]
         range_combo_box = self.sensor_layout.itemAtPosition(row, 4).widget()
 
         # Apply constraints based on the selected type
         if selected_type == "Diode":
+            current_reversal_combo_box.setCurrentIndex(0)
+            current_reversal_combo_box.setEnabled(False)  # Disable current reversal
+            current_reversal_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
             autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
-            range_combo_box.setCurrentIndex(0)  # Set range to "7.5 V (10 µA)"
             autorange_combo_box.setEnabled(False)  # Disable autorange
+            autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+            range_combo_box.clear()
+            range_combo_box.addItems(["7.5 V (10 µA)"])
             range_combo_box.setEnabled(False)  # Disable range
+            range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
         elif selected_type == "Platinum RTD":
             autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
-            range_combo_box.setCurrentIndex(1)  # Set range to "1 kΩ (1 mA)"
             autorange_combo_box.setEnabled(False)  # Disable autorange
+            autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+            range_combo_box.clear()
+            range_combo_box.addItems(["1 kΩ (1 mA)"])
             range_combo_box.setEnabled(False)  # Disable range
+            range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+            current_reversal_combo_box.setEnabled(True)  # Enable current reversal
+            current_reversal_combo_box.setStyleSheet("")
         else:
-            # For other types, enable autorange and range combo boxes
+            current_reversal_combo_box.setEnabled(True)
+            current_reversal_combo_box.setStyleSheet("")
             autorange_combo_box.setEnabled(True)
+            autorange_combo_box.setStyleSheet("")
             range_combo_box.setEnabled(True)
-
-
+            range_combo_box.setStyleSheet("")
+            range_combo_box.clear()
+            range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
+                                    "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
+                                    "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
 
 
 if __name__ == "__main__":
