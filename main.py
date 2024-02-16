@@ -277,6 +277,7 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 name = self.ser.read(1024).decode().strip()
                 self.table_widget.setItem(row, 0, QTableWidgetItem(name))
+                self.sensor_layout.itemAtPosition(row + 1, 1).widget().setText(name)
         except serial.SerialException as e:
             print(f"Error: {e}")
 
@@ -530,7 +531,6 @@ class TemperatureWindow(QWidget):
                 message = f"INTYPE? {input_number}\n"
                 self.ser.write(message.encode())
                 response = self.ser.read(1024).decode().strip()
-                print(response)
 
                 # Parse the response
                 sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
