@@ -437,6 +437,10 @@ class TemperatureWindow(QWidget):
         current_reversal_combo_box = self.sensor_layout.itemAtPosition(row, 3).widget()
         autorange_combo_box = self.sensor_layout.itemAtPosition(row, 4).widget()
         range_combo_box = self.sensor_layout.itemAtPosition(row, 5).widget()
+        units_combo_box = self.sensor_layout.itemAtPosition(row, 6).widget()
+
+        units_combo_box.setEnabled(True)
+        units_combo_box.setStyleSheet("")
 
         # Apply constraints based on the selected type
         if selected_type == "Diode":
@@ -478,57 +482,55 @@ class TemperatureWindow(QWidget):
 
         # Get the row number of the combo box in the layout
         row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender_combo_box))[0]
-
+        
         # Get the selected power state
         selected_power_state = sender_combo_box.currentText()
 
         # Get the type combo box for the current row
-        type_combo_box = self.sensor_layout.itemAtPosition(row, 2).widget()
+        type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
 
-        # Enable or disable other columns based on the selected power state
-        for col in range(2, 7):  # Exclude the Power and Name columns
-            widget = self.sensor_layout.itemAtPosition(row, col).widget()
-            if selected_power_state == "Off":
-                widget.setEnabled(False)
-                widget.setStyleSheet("QComboBox { color: darkgray; }")  # Make the disabled combo boxes darker
-            else:
-                widget.setEnabled(True)
-                widget.setStyleSheet("")  # Reset the style sheet
-
-        # When the power is on, enable specific columns based on the sensor type
         if selected_power_state == "On":
-            selected_type = type_combo_box.currentText()
-            if selected_type == "Diode":
-                # Disable all columns except Type and Display Units
-                for col in range(2, 7):  # Exclude the Power and Name columns
+            # Diode
+            if type == 1:
+                for col in range(2, 7):
                     widget = self.sensor_layout.itemAtPosition(row, col).widget()
-                    if col not in [2, 6]:  # Type and Display Units columns
-                        widget.setEnabled(False)
-                        widget.setStyleSheet("QComboBox { color: darkgray; }")
-            elif selected_type == "Platinum RTD":
-                # Enable Type, Current Reversal, and Display Units columns
-                # Disable Autorange and Range columns
-                for col in range(2, 7):  # Exclude the Power and Name columns
+                    if col in [2, 6]:  # Type and Display Units columns
+                        widget.setEnabled(True)
+                        widget.setStyleSheet("")
+            # Platinum RTD
+            elif type == 2:
+                for col in range(2, 7):
                     widget = self.sensor_layout.itemAtPosition(row, col).widget()
                     if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
                         widget.setEnabled(True)
                         widget.setStyleSheet("")
-                    else:
-                        widget.setEnabled(False)
-                        widget.setStyleSheet("QComboBox { color: darkgray; }")
-            else:
-                # Enable all columns except Power and Name columns
-                for col in range(2, 7):  # Exclude the Power and Name columns
+            # NTC RTD
+            elif type == 3:
+                for col in range(2, 7):
                     widget = self.sensor_layout.itemAtPosition(row, col).widget()
                     widget.setEnabled(True)
                     widget.setStyleSheet("")
 
-                    message = f"INTYPE? <input>\n"
-                    self.ser.write(message.encode())
+            else:
+                # Only enable type column
+                widget = self.sensor_layout.itemAtPosition(row, 2).widget()
+                widget.setEnabled(True)
+                widget.setStyleSheet("")
+        else:
+            for col in range(2, 7):
+                widget = self.sensor_layout.itemAtPosition(row, col).widget()
+                widget.setEnabled(False)
+                widget.setStyleSheet("QComboBox { color: darkgray; }")
+
+        
 
     def read_sensor_setup(self):
         try:
-            for row in range(8):  # Adjust the loop to start from 0
+            for row in range(8):
                 input_number = row + 1
                 message = f"INTYPE? {input_number}\n"
                 self.ser.write(message.encode())
@@ -537,7 +539,7 @@ class TemperatureWindow(QWidget):
                 # Parse the response
                 sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
 
-                # Update the QComboBoxes based on the parsed values
+                # # Update the QComboBoxes based on the parsed values
                 power_combo_box =self.sensor_layout.itemAtPosition(row + 1, 0).widget()
                 type_combo_box = self.sensor_layout.itemAtPosition(row + 1, 2).widget()
                 autorange_combo_box = self.sensor_layout.itemAtPosition(row + 1, 4).widget()
@@ -563,28 +565,51 @@ class TemperatureWindow(QWidget):
                 # Update Display Units combo box
                 display_units_combo_box.setCurrentIndex(int(units)-1)
 
-                # Update the enable/disable state of the QComboBoxes
-                
-                if int(enabled) == 0:
-                    type_combo_box.setEnabled(False)
-                    type_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-                    autorange_combo_box.setEnabled(False)
-                    autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-                    range_combo_box.setEnabled(False)
-                    range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-                    current_reversal_combo_box.setEnabled(False)
-                    current_reversal_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-                    display_units_combo_box.setEnabled(False)
-                    display_units_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+                if int(enabled) == 1:
+                    # Diode
+                    if int(sensor_type) == 1:
+                        for col in range(2, 7):
+                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            if col in [2, 6]:  # Type and Display Units columns
+                                widget.setEnabled(True)
+                                widget.setStyleSheet("")
+                            else:
+                                widget.setEnabled(False)
+                                widget.setStyleSheet("QComboBox { color: darkgray; }")
+                    # Platinum RTD
+                    elif int(sensor_type) == 2:
+                        for col in range(2, 7):
+                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
+                                widget.setEnabled(True)
+                                widget.setStyleSheet("")
+                            else:
+                                widget.setEnabled(False)
+                                widget.setStyleSheet("QComboBox { color: darkgray; }")
+                    # NTC RTD
+                    elif int(sensor_type) == 3:
+                        for col in range(2, 7):
+                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget.setEnabled(True)
+                            widget.setStyleSheet("")
+
+                    else:
+                        # Only enable type column
+                        for col in range(3, 7):
+                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget.setEnabled(False)
+                            widget.setStyleSheet("QComboBox { color: darkgray; }")
+                        widget = self.sensor_layout.itemAtPosition(input_number, 2).widget()
+                        widget.setEnabled(True)
+                        widget.setStyleSheet("")
                 else:
-                    type_combo_box.setEnabled(True)
-                    autorange_combo_box.setEnabled(True)
-                    range_combo_box.setEnabled(True)
-                    current_reversal_combo_box.setEnabled(True)
-                    display_units_combo_box.setEnabled(True)
+                    for col in range(2, 7):
+                        widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                        widget.setEnabled(False)
+                        widget.setStyleSheet("QComboBox { color: darkgray; }")
 
         except serial.SerialException as e:
-            print(f"Error: {e}")
+                print(f"Error: {e}")
 
 
 
