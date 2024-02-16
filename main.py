@@ -126,6 +126,7 @@ class TemperatureWindow(QWidget):
         # Add QLineEdit for Name
         for row in range(1, 9):
             line_edit = QLineEdit()
+            line_edit.editingFinished.connect(self.handle_name_change)
             self.sensor_layout.addWidget(line_edit, row, 1)
 
         # Add QComboBox for Type
@@ -390,24 +391,25 @@ class TemperatureWindow(QWidget):
         self.ser.write(message.encode())
     
     def handle_channel_unit_change(self):
-        # Get the index of the combobox that triggered the change
         sender_combobox = self.sender()
-
-        # Get the row number of the combobox in the layout
         row = self.profibus_layout.getItemPosition(self.profibus_layout.indexOf(sender_combobox))[0]
-
-        # Get the input number corresponding to the row
         input_number = row - 3  # Offset by 3 to account for the header rows
 
-        # Get the index of the channel and unit comboboxes
         channel_index = self.channel_comboboxes[input_number-1].currentIndex()
         unit_index = self.units_comboboxes[input_number-1].currentIndex()
 
-        # Call the function that requires both channel and unit indices
         self.handle_comboboxes_change(input_number, channel_index, unit_index)
 
     def handle_comboboxes_change(self, input_number, channel_index, unit_index):
         message = f"PROFISLOT {input_number},{channel_index+1},{unit_index+1}\n"
+        self.ser.write(message.encode())
+    
+    def handle_name_change(self):
+        sender = self.sender()
+        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender))[0]
+        new_name = sender.text()
+        #TODO: add table name change
+        message = f"INNAME {row},{new_name}\n"
         self.ser.write(message.encode())
     
     def restore_factory_settings(self):
