@@ -1,6 +1,5 @@
-import PySide6
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 import serial
 
 class TemperatureWindow(QWidget):
@@ -135,8 +134,20 @@ class TemperatureWindow(QWidget):
             self.curve_name_labels.append(label)
 
         # Add rows for curve section
+        self.curve_comboboxes = []
         for i in range(1, 9):
-            self.curve_layout.addWidget(QLabel(f"Curve {i}"), i, 1)
+            combobox = QComboBox()
+            combobox.addItems(["LSCI DT-600", "LSCI DT-400", "LSCI PT-100", "IEC P100 RTD", "IEC P1000 RTD", "Simulated Sensor-NTC"])
+            self.curve_comboboxes.append(combobox)
+            self.curve_layout.addWidget(combobox, i, 1)
+        
+        # Delete buttons for curves
+        self.curve_delete_buttons = []
+        for i in range(1, 9):
+            button = QPushButton("DEL")
+            self.curve_delete_buttons.append(button)
+            self.curve_layout.addWidget(button, i, 2)
+
         
         # Add widgets to vlayout
         self.curve_vlayout.addWidget(self.curve_label)
@@ -306,6 +317,7 @@ class TemperatureWindow(QWidget):
             self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.curve_delete_buttons[i].clicked.connect(self.delete_curve)
 
 
     def read_general_information(self):
@@ -405,10 +417,26 @@ class TemperatureWindow(QWidget):
                 input_number = row + 1
                 message = f"CRVHDR? {input_number}\n"
                 self.ser.write(message.encode())
-                value = self.ser.read(1024).decode().strip().split(",")[2]
+                response = self.ser.read(1024).decode().strip().split(",")[:5]
+                name = response[0].strip()
+                value = response[2]
                 excitation = '10µA' if value == '2' else '1mA' if value == '3' else ''
                 self.table_widget.setItem(row, 3, QTableWidgetItem(excitation))
-
+                #TODO: check names
+                if (name == "LSCI_DT-600"):
+                    self.curve_comboboxes[row].setCurrentIndex(0)
+                elif (name == "LSCI_DT-400"):
+                    self.curve_comboboxes[row].setCurrentIndex(1)
+                elif (name == "LSCI_PT-100"):
+                    self.curve_comboboxes[row].setCurrentIndex(2)
+                elif (name == "IEC_P100-RTD"):
+                    self.curve_comboboxes[row].setCurrentIndex(3)
+                elif (name == "IEC_P1000-RTD"):
+                    self.curve_comboboxes[row].setCurrentIndex(4)
+                elif (name == "Simulated_Sensor-NTC"):
+                    self.curve_comboboxes[row].setCurrentIndex(5)
+                else:
+                    self.curve_comboboxes[row].setCurrentIndex(-1)
         except serial.SerialException as e:
             print(f"Error: {e}")
     
@@ -511,12 +539,18 @@ class TemperatureWindow(QWidget):
         message = f"DFLT 99\n"
         self.ser.write(message.encode())
     
-    def toggle_button_text(self):
-        button = self.sender()  # Get the button that triggered the signal
-        if button.isChecked():  # If the button is checked (On)
-            button.setText("On")
-        else:
-            button.setText("Off")
+    def delete_curve(self):
+        sender = self.sender()
+        i = 1
+        for button in self.curve_delete_buttons:
+            if (sender == button):
+                message = f"CRVDEL {i}\n"
+                self.ser.write(message.encode)
+                break
+            i+=1
+        
+
+    
 
     def handle_sensor_change(self, index):
         #TODO: if type/power changes this function also gets called for every combobox -> fix that
