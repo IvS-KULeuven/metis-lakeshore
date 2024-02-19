@@ -556,6 +556,7 @@ class TemperatureWindow(QWidget):
                 message = f"INTYPE? {input_number}\n"
                 self.ser.write(message.encode())
                 response = self.ser.read(1024).decode().strip()
+                print(response)
 
                 # Parse the response
                 sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
@@ -577,9 +578,6 @@ class TemperatureWindow(QWidget):
                 # Update Autorange combo box
                 autorange_combo_box.setCurrentIndex(int(autorange))
 
-                # Update Range combo box
-                range_combo_box.setCurrentIndex(int(range_val))
-
                 # Update Current Reversal combo box
                 current_reversal_combo_box.setCurrentIndex(int(current_reversal))
 
@@ -589,6 +587,9 @@ class TemperatureWindow(QWidget):
                 if int(enabled) == 1:
                     # Diode
                     if int(sensor_type) == 1:
+                        range_combo_box.clear()
+                        range_combo_box.addItems(["7.5 V (10 µA)"])
+                        range_combo_box.setCurrentIndex(int(range_val))
                         for col in range(2, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                             if col in [2, 6]:  # Type and Display Units columns
@@ -599,6 +600,9 @@ class TemperatureWindow(QWidget):
                                 widget.setStyleSheet("QComboBox { color: darkgray; }")
                     # Platinum RTD
                     elif int(sensor_type) == 2:
+                        range_combo_box.clear()
+                        range_combo_box.addItems(["1 kΩ (1 mA)"])
+                        range_combo_box.setCurrentIndex(int(range_val))
                         for col in range(2, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                             if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
@@ -609,12 +613,20 @@ class TemperatureWindow(QWidget):
                                 widget.setStyleSheet("QComboBox { color: darkgray; }")
                     # NTC RTD
                     elif int(sensor_type) == 3:
+                        range_combo_box.clear()
+                        range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
+                        "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
+                        "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
+                        range_combo_box.setCurrentIndex(int(range_val))
                         for col in range(2, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                             widget.setEnabled(True)
                             widget.setStyleSheet("")
 
                     else:
+                        range_combo_box.clear()
+                        range_combo_box.addItems([""])
+                        range_combo_box.setCurrentIndex(int(range_val))
                         # Only enable type column
                         for col in range(3, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
@@ -624,6 +636,9 @@ class TemperatureWindow(QWidget):
                         widget.setEnabled(True)
                         widget.setStyleSheet("")
                 else:
+                    range_combo_box.clear()
+                    range_combo_box.addItems([""])
+                    range_combo_box.setCurrentIndex(int(range_val))
                     for col in range(2, 7):
                         widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                         widget.setEnabled(False)
