@@ -500,7 +500,7 @@ class TemperatureWindow(QWidget):
                     break
                 j+=1
 
-        message = f"INNAME {row},{new_name}\n"
+        message = f"INNAME {row+1},{new_name}\n"
         self.ser.write(message.encode())
 
         self.table_widget.setItem(row, 0, QTableWidgetItem(new_name))
