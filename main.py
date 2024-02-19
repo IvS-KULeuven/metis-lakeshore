@@ -26,7 +26,6 @@ class TemperatureWindow(QWidget):
 
         # Restore factory settings button
         self.restore_button = QPushButton("Restore factory settings")
-        self.restore_button.clicked.connect(self.restore_factory_settings)
 
         # Labels for general information
         self.module_name_label = QLineEdit()
@@ -114,30 +113,29 @@ class TemperatureWindow(QWidget):
             self.sensor_layout.addWidget(QLabel(f"<b>{label}</b>"), 0, col)
 
         # Add QComboBox for Power (On/Off)
-        self.power_combo_boxes = []
         power_options = ["Off", "On"]
+        self.power_comboboxes = []
         for row in range(1, 9):
             combo_box = QComboBox()
             combo_box.addItems(power_options)
-            combo_box.currentIndexChanged.connect(self.handle_power_change)
             self.sensor_layout.addWidget(combo_box, row, 0)
-            self.power_combo_boxes.append(combo_box)
+            self.power_comboboxes.append(combo_box)
 
         # Add QLineEdit for Name
+        self.line_edits = []
         for row in range(1, 9):
             line_edit = QLineEdit()
-            line_edit.editingFinished.connect(self.handle_name_change)
             self.sensor_layout.addWidget(line_edit, row, 1)
+            self.line_edits.append(line_edit)
 
         # Add QComboBox for Type
         sensor_types = ["Diode", "Platinum RTD", "NTC RTD"]
-        self.type_combo_boxes = []  # Store the combo boxes in a list to access them later if needed
+        self.type_comboboxes = []  # Store the combo boxes in a list to access them later if needed
         for row in range(1, 9):
             combo_box = QComboBox()
             combo_box.addItems(sensor_types)
-            combo_box.currentIndexChanged.connect(self.handle_type_change)
             self.sensor_layout.addWidget(combo_box, row, 2)
-            self.type_combo_boxes.append(combo_box)
+            self.type_comboboxes.append(combo_box)
 
         # Add QComboBox for Current Reversal and Autorange
         on_off_values = ["Off", "On"]  # Start with "Off"
@@ -228,10 +226,14 @@ class TemperatureWindow(QWidget):
         self.address_line_edit.editingFinished.connect(self.handle_address_change)
         self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
         self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
-        # Connect signals for channel and unit comboboxes
+        self.restore_button.clicked.connect(self.restore_factory_settings)
+        # Connect signals for comboboxes and others
         for i in range(8):
             self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
             self.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
+            self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
+            self.line_edits[i].editingFinished.connect(self.handle_name_change)
 
 
     def read_general_information(self):
@@ -424,6 +426,7 @@ class TemperatureWindow(QWidget):
             button.setText("Off")
 
     def handle_type_change(self, index):
+        print("type change called")
         # Get the index of the combo box that triggered the change
         sender_combo_box = self.sender()
 
@@ -438,7 +441,6 @@ class TemperatureWindow(QWidget):
         autorange_combo_box = self.sensor_layout.itemAtPosition(row, 4).widget()
         range_combo_box = self.sensor_layout.itemAtPosition(row, 5).widget()
         units_combo_box = self.sensor_layout.itemAtPosition(row, 6).widget()
-
         units_combo_box.setEnabled(True)
         units_combo_box.setStyleSheet("")
 
@@ -475,8 +477,21 @@ class TemperatureWindow(QWidget):
             range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
                                     "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
                                     "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
+        
+        # Get the values
+        power = self.sensor_layout.itemAtPosition(row, 0).widget().currentIndex()
+        type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
+
+        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
+        print(message)
+        self.ser.write(message.encode())
             
     def handle_power_change(self, index):
+        print("power change called")
         # Get the index of the combo box that triggered the change
         sender_combo_box = self.sender()
 
@@ -486,12 +501,18 @@ class TemperatureWindow(QWidget):
         # Get the selected power state
         selected_power_state = sender_combo_box.currentText()
 
-        # Get the type combo box for the current row
+        # Get the values
+        power = self.sensor_layout.itemAtPosition(row, 0).widget().currentIndex()
         type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
         current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
         autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
         selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
         unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
+
+
+        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
+        print(message)
+        self.ser.write(message.encode())
 
         if selected_power_state == "On":
             # Diode
