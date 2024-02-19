@@ -1,5 +1,5 @@
 import PySide6
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
 from PySide6.QtCore import Qt, QTimer
 import serial
 
@@ -48,6 +48,9 @@ class TemperatureWindow(QWidget):
         # Create QHBoxlayout for Profibus and Curve part
         self.left_hlayout = QHBoxLayout()
 
+        # Set size constraint to allow stretching
+        self.left_hlayout.setSizeConstraint(QLayout.SetMinimumSize)
+
         # Profibus communication section
         # Vbox for Profibus part
         self.profibus_vlayout = QVBoxLayout()
@@ -81,7 +84,7 @@ class TemperatureWindow(QWidget):
 
         # Labels for Slot1-8
         for i in range(1, 9):
-            self.profibus_layout.addWidget(QLabel(f"Slot{i}"), i + 3, 0)
+            self.profibus_layout.addWidget(QLabel(f"<b>Slot {i}</b>"), i + 3, 0)
 
         # Comboboxes for Channel
         self.channel_comboboxes = []
@@ -124,9 +127,15 @@ class TemperatureWindow(QWidget):
         self.curve_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
         self.curve_layout.addWidget(QLabel("<b>Curve</b>"), 0, 1)
 
+        # Add QLine_edit for Name
+        self.curve_name_labels = []
+        for row in range(1, 9):
+            label = QLineEdit("")
+            self.curve_layout.addWidget(label, row, 0)
+            self.curve_name_labels.append(label)
+
         # Add rows for curve section
         for i in range(1, 9):
-            self.curve_layout.addWidget(QLabel(f"Name {i}"), i, 0)
             self.curve_layout.addWidget(QLabel(f"Curve {i}"), i, 1)
         
         # Add widgets to vlayout
@@ -134,8 +143,8 @@ class TemperatureWindow(QWidget):
         self.curve_vlayout.addWidget(self.curve_frame)
 
         # Add profibus and curve layouts to left_hlayout
-        self.left_hlayout.addLayout(self.profibus_vlayout)
-        self.left_hlayout.addLayout(self.curve_vlayout)
+        self.left_hlayout.addLayout(self.profibus_vlayout, stretch=1)
+        self.left_hlayout.addLayout(self.curve_vlayout, stretch=1)
 
         # Sensor setup section
         self.sensor_label = QLabel("<b>Sensor setup</b>")
@@ -225,6 +234,9 @@ class TemperatureWindow(QWidget):
         self.left_layout.addLayout(self.left_hlayout)
         self.left_layout.addWidget(self.sensor_label)
         self.left_layout.addWidget(self.sensor_frame)
+
+        # Stretch the left_hlayout within the left_layout
+        self.left_layout.setStretch(2, 1)
 
         # Right layout for temperature table
         self.right_layout = QVBoxLayout()
