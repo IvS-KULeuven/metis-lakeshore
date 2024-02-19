@@ -1,5 +1,5 @@
 import PySide6
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView
 from PySide6.QtCore import Qt, QTimer
 import serial
 
@@ -45,7 +45,14 @@ class TemperatureWindow(QWidget):
         self.general_section_layout.addWidget(self.brightness_combobox, 3, 1)
         self.general_section_layout.addWidget(self.restore_button, 4, 0, 1, 2)
 
+        # Create QHBoxlayout for Profibus and Curve part
+        self.left_hlayout = QHBoxLayout()
+
         # Profibus communication section
+        # Vbox for Profibus part
+        self.profibus_vlayout = QVBoxLayout()
+
+        # New QLabel for PROFIBUS
         self.profibus_label = QLabel("<b>PROFIBUS communication</b>")
         self.profibus_label.setStyleSheet("font-size: 14pt;")
 
@@ -91,6 +98,44 @@ class TemperatureWindow(QWidget):
             units_combobox.addItems(["Kelvin", "Celsius", "sensor", "Fahrenheit"])
             self.units_comboboxes.append(units_combobox)
             self.profibus_layout.addWidget(units_combobox, i + 3, 2)
+        
+        # Add widgets to vlayout
+        self.profibus_vlayout.addWidget(self.profibus_label)
+        self.profibus_vlayout.addWidget(self.profibus_frame)
+
+        # Curve setup section 
+        # Vbox for Curve part
+        self.curve_vlayout = QVBoxLayout()
+
+        # Label for curve setup
+        self.curve_label = QLabel("<b>Curve setup</b>")
+        self.curve_label.setStyleSheet("font-size: 14pt;")
+
+        # New QFrame for curve section
+        self.curve_frame = QFrame()
+        self.curve_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
+        self.curve_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Grid layout for curve section
+        self.curve_layout = QGridLayout()
+        self.curve_frame.setLayout(self.curve_layout)
+
+        # Add labels for curve section
+        self.curve_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
+        self.curve_layout.addWidget(QLabel("<b>Curve</b>"), 0, 1)
+
+        # Add rows for curve section
+        for i in range(1, 9):
+            self.curve_layout.addWidget(QLabel(f"Name {i}"), i, 0)
+            self.curve_layout.addWidget(QLabel(f"Curve {i}"), i, 1)
+        
+        # Add widgets to vlayout
+        self.curve_vlayout.addWidget(self.curve_label)
+        self.curve_vlayout.addWidget(self.curve_frame)
+
+        # Add profibus and curve layouts to left_hlayout
+        self.left_hlayout.addLayout(self.profibus_vlayout)
+        self.left_hlayout.addLayout(self.curve_vlayout)
 
         # Sensor setup section
         self.sensor_label = QLabel("<b>Sensor setup</b>")
@@ -173,12 +218,11 @@ class TemperatureWindow(QWidget):
             combo_box.addItems(display_units)
             self.display_units_comboboxes.append(combo_box)
             self.sensor_layout.addWidget(combo_box, row, 6)
-            
+
         # Add sections to general layout
         self.left_layout.addWidget(self.general_label)
         self.left_layout.addWidget(self.general_section_frame)
-        self.left_layout.addWidget(self.profibus_label)
-        self.left_layout.addWidget(self.profibus_frame)
+        self.left_layout.addLayout(self.left_hlayout)
         self.left_layout.addWidget(self.sensor_label)
         self.left_layout.addWidget(self.sensor_frame)
 
@@ -201,7 +245,7 @@ class TemperatureWindow(QWidget):
         self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Set vertical header to resize to contents
-        self.table_widget.verticalHeader().setSectionResizeMode(PySide6.QtWidgets.QHeaderView.ResizeToContents)
+        self.table_widget.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         # Add table to right layout
         self.right_layout.addWidget(self.table_widget)
