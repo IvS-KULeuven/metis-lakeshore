@@ -301,6 +301,7 @@ class TemperatureWindow(QWidget):
             self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
             self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.line_edits[i].editingFinished.connect(self.handle_name_change)
+            self.curve_name_labels[i].editingFinished.connect(self.handle_name_change)
             self.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
@@ -351,7 +352,8 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 name = self.ser.read(1024).decode().strip()
                 self.table_widget.setItem(row, 0, QTableWidgetItem(name))
-                self.sensor_layout.itemAtPosition(row + 1, 1).widget().setText(name)
+                self.line_edits[row].setText(name)
+                self.curve_name_labels[row].setText(name)
         except serial.SerialException as e:
             print(f"Error: {e}")
 
@@ -479,11 +481,31 @@ class TemperatureWindow(QWidget):
     
     def handle_name_change(self):
         sender = self.sender()
-        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender))[0]
         new_name = sender.text()
-        #TODO: add table name change
+        row = 0
+        i =0
+        found = False
+        for line_edit in self.line_edits:
+            if (line_edit == sender):
+                row = i
+                found = True
+                break
+            i+=1
+        
+        if (not found):
+            j =0
+            for label in self.curve_name_labels:
+                if (label == sender):
+                    row = j
+                    break
+                j+=1
+
         message = f"INNAME {row},{new_name}\n"
         self.ser.write(message.encode())
+
+        self.table_widget.setItem(row, 0, QTableWidgetItem(new_name))
+        self.line_edits[row].setText(new_name)
+        self.curve_name_labels[row].setText(new_name)
     
     def restore_factory_settings(self):
         message = f"DFLT 99\n"
