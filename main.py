@@ -545,12 +545,9 @@ class TemperatureWindow(QWidget):
         for button in self.curve_delete_buttons:
             if (sender == button):
                 message = f"CRVDEL {i}\n"
-                self.ser.write(message.encode)
+                self.ser.write(message.encode())
                 break
             i+=1
-        
-
-    
 
     def handle_sensor_change(self, index):
         #TODO: if type/power changes this function also gets called for every combobox -> fix that
