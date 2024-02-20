@@ -259,7 +259,7 @@ class TemperatureWindow(QWidget):
         # Populate table with sample data
         for row in range(8):
             self.table_widget.setItem(row, 0, QTableWidgetItem(""))
-            self.table_widget.setItem(row, 1, QTableWidgetItem("0"))
+            self.table_widget.setItem(row, 1, QTableWidgetItem(""))
             self.table_widget.setItem(row, 2, QTableWidgetItem(""))
             self.table_widget.setItem(row, 3, QTableWidgetItem(""))
             self.table_widget.setItem(row, 4, QTableWidgetItem(""))
@@ -285,13 +285,13 @@ class TemperatureWindow(QWidget):
         self.read_general_information()
         self.read_brightness()
         self.read_input_names()
-        self.read_temperature()
         self.read_sensor_units()
         self.read_address()
         self.read_slot_count()
         self.read_slots()
         self.read_sensor_setup()
         self.read_curves()
+        self.read_temperature()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
@@ -381,11 +381,26 @@ class TemperatureWindow(QWidget):
 
             # Update table with formatted temperatures
             for row, temp in enumerate(temperatures):
-                formatted_temp = temp.lstrip('+')  # Remove leading '+'
-                if formatted_temp.startswith('0') and '.' in formatted_temp:
-                    formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's except for '0.0'
-                formatted_temp = formatted_temp + " K"
-                self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '.00000 K' else '0 K'))
+                if(self.power_comboboxes[row].currentIndex() == 1):  #if power is on
+                    formatted_temp = temp.lstrip('+')  # Remove leading '+'
+                    if formatted_temp.startswith('0') and '.' in formatted_temp:
+                        formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's except for '0.0'
+                    formatted_temp = formatted_temp + " K"
+                    if formatted_temp == '.00000 K':
+                        self.ser.write(message.encode())
+                        response = self.ser.read(1024).decode().strip()
+                        match response:
+                            case "1":
+                                formatted_temp = "INV.READ"
+                            case "16":
+                                formatted_temp = "T.UNDER"
+                            case "32":
+                                formatted_temp = "T.OVER"
+                            case "64":
+                                formatted_temp = "S.UNDER"
+                            case "128":
+                                formatted_temp = "S.OVER"
+                    self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '.00000 K' else '0 K'))
 
         except serial.SerialException as e:
             print(f"Error: {e}")
