@@ -285,17 +285,17 @@ class TemperatureWindow(QWidget):
         self.read_general_information()
         self.read_brightness()
         self.read_input_names()
-        self.read_sensor_units()
         self.read_address()
         self.read_slot_count()
         self.read_slots()
         self.read_sensor_setup()
         self.read_curves()
+        self.read_sensor_units()
         self.read_temperature()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
-        self.timer.setInterval(10000)  # Update every 10 seconds
+        self.timer.setInterval(3000)  # Update every 10 seconds
         self.timer.timeout.connect(self.read_temperature)
         self.timer.start()
 
@@ -387,6 +387,7 @@ class TemperatureWindow(QWidget):
                         formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's except for '0.0'
                     formatted_temp = formatted_temp + " K"
                     if formatted_temp == '.00000 K':
+                        message = f"RDGST? {row+1}\n"
                         self.ser.write(message.encode())
                         response = self.ser.read(1024).decode().strip()
                         match response:
@@ -401,6 +402,8 @@ class TemperatureWindow(QWidget):
                             case "128":
                                 formatted_temp = "S.OVER"
                     self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '.00000 K' else '0 K'))
+                else:
+                    self.table_widget.setItem(row, 1, QTableWidgetItem(""))
 
         except serial.SerialException as e:
             print(f"Error: {e}")
@@ -417,11 +420,14 @@ class TemperatureWindow(QWidget):
 
             # Update table with sensor units
             for row, unit in enumerate(sensor_units):
-                unit = unit.lstrip('+')  # Remove leading '+'
-                if '.' in unit:
-                    unit = unit.lstrip('0')  # Remove leading '0's
-                unit = '0' + unit
-                self.table_widget.setItem(row, 2, QTableWidgetItem(unit if unit != '0.000' else '0'))
+                if(self.power_comboboxes[row].currentIndex() == 1):
+                    unit = unit.lstrip('+')  # Remove leading '+'
+                    if '.' in unit:
+                        unit = unit.lstrip('0')  # Remove leading '0's
+                    unit = '0' + unit
+                    self.table_widget.setItem(row, 2, QTableWidgetItem(unit if unit != '0.000' else '0'))
+                else:
+                    self.table_widget.setItem(row, 2, QTableWidgetItem(""))
 
         except serial.SerialException as e:
             print(f"Error: {e}")
