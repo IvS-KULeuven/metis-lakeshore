@@ -9,13 +9,10 @@ timeout = 1
 ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
-    with open("SIMULATED_SENSO.txt", "w") as file:
-        for i in range(200):
-            index = i+1
-            message = f"CRVPT? 1, {index}\n"
-            ser.write(message.encode())
-            name = ser.read(1024).decode().strip()
-            file.write(name + "\n")
+    message = f"CRVHDR? 1\n"
+    ser.write(message.encode())
+    name = ser.read(1024).decode().strip()
+    print(name)
             
 except serial.SerialException as e:
     print(f"Error: {e}")

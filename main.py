@@ -295,7 +295,7 @@ class TemperatureWindow(QWidget):
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
-        self.timer.setInterval(3000)  # Update every 10 seconds
+        self.timer.setInterval(10000)  # Update every 10 seconds
         self.timer.timeout.connect(self.read_temperature)
         self.timer.start()
 
