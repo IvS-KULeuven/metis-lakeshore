@@ -287,11 +287,11 @@ class TemperatureWindow(QWidget):
         self.read_input_names()
         self.read_temperature()
         self.read_sensor_units()
-        self.read_curves()
         self.read_address()
         self.read_slot_count()
         self.read_slots()
         self.read_sensor_setup()
+        self.read_curves()
 
         # Start timer for updating temperature
         self.timer = QTimer(self)
@@ -421,7 +421,7 @@ class TemperatureWindow(QWidget):
                 name = response[0].strip()
                 value = response[2]
                 excitation = '10µA' if value == '2' else '1mA' if value == '3' else ''
-                self.table_widget.setItem(row, 3, QTableWidgetItem(excitation))
+                # self.table_widget.setItem(row, 3, QTableWidgetItem(excitation))
                 #TODO: check names
                 if (name == "LSCI_DT-600"):
                     self.curve_comboboxes[row].setCurrentIndex(0)
@@ -650,6 +650,9 @@ class TemperatureWindow(QWidget):
         selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
         unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
 
+        #range combobox
+        range_combo_box = self.sensor_layout.itemAtPosition(row, 5).widget()
+
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
@@ -671,6 +674,11 @@ class TemperatureWindow(QWidget):
                         widget.setStyleSheet("")
             # NTC RTD
             elif type == 3:
+                range_combo_box.clear()
+                range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
+                "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
+                "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
+                range_combo_box.setCurrentIndex(int(selected_range))
                 for col in range(2, 7):
                     widget = self.sensor_layout.itemAtPosition(row, col).widget()
                     widget.setEnabled(True)
@@ -726,6 +734,7 @@ class TemperatureWindow(QWidget):
                 if int(enabled) == 1:
                     # Diode
                     if int(sensor_type) == 1:
+                        self.table_widget.setItem(row, 3, QTableWidgetItem("10 µA"))
                         range_combo_box.clear()
                         range_combo_box.addItems(["7.5 V (10 µA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
@@ -739,6 +748,7 @@ class TemperatureWindow(QWidget):
                                 widget.setStyleSheet("QComboBox { color: darkgray; }")
                     # Platinum RTD
                     elif int(sensor_type) == 2:
+                        self.table_widget.setItem(row, 3, QTableWidgetItem("1 mA"))
                         range_combo_box.clear()
                         range_combo_box.addItems(["1 kΩ (1 mA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
@@ -757,6 +767,12 @@ class TemperatureWindow(QWidget):
                         "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
                         "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
+                        excitation = range_combo_box.currentText()
+                        # Extracting the part between parentheses
+                        start_index = excitation.find('(') + 1
+                        end_index = excitation.find(')', start_index)
+                        parsed_excitation = excitation[start_index:end_index]
+                        self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
                         for col in range(2, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                             widget.setEnabled(True)
