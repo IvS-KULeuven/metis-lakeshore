@@ -9,7 +9,7 @@ timeout = 1
 ser = serial.Serial(port, baudrate, timeout=timeout)
 
 try:
-    with open("SIMULATED_SENSO.txt", "w") as file:
+    with open("new_file.txt", "w") as file:
         for i in range(200):
             index = i+1
             message = f"CRVPT? 1, {index}\n"

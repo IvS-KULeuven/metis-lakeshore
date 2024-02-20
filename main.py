@@ -383,10 +383,12 @@ class TemperatureWindow(QWidget):
             for row, temp in enumerate(temperatures):
                 if(self.power_comboboxes[row].currentIndex() == 1):  #if power is on
                     formatted_temp = temp.lstrip('+')  # Remove leading '+'
-                    if formatted_temp.startswith('0') and '.' in formatted_temp:
-                        formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's except for '0.0'
+                    if  '.' in formatted_temp:
+                        formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
+                    if formatted_temp[0] == ".":
+                        formatted_temp = '0' + formatted_temp
                     formatted_temp = formatted_temp + " K"
-                    if formatted_temp == '.00000 K':
+                    if formatted_temp == '0.00000 K':
                         message = f"RDGST? {row+1}\n"
                         self.ser.write(message.encode())
                         response = self.ser.read(1024).decode().strip()
@@ -401,7 +403,7 @@ class TemperatureWindow(QWidget):
                                 formatted_temp = "S.UNDER"
                             case "128":
                                 formatted_temp = "S.OVER"
-                    self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '.00000 K' else '0 K'))
+                    self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
                 else:
                     self.table_widget.setItem(row, 1, QTableWidgetItem(""))
 
@@ -424,7 +426,8 @@ class TemperatureWindow(QWidget):
                     unit = unit.lstrip('+')  # Remove leading '+'
                     if '.' in unit:
                         unit = unit.lstrip('0')  # Remove leading '0's
-                    unit = '0' + unit
+                    if unit[0] == ".":
+                        unit = '0' + unit
                     self.table_widget.setItem(row, 2, QTableWidgetItem(unit if unit != '0.000' else '0'))
                 else:
                     self.table_widget.setItem(row, 2, QTableWidgetItem(""))
@@ -450,11 +453,11 @@ class TemperatureWindow(QWidget):
                     self.curve_comboboxes[row].setCurrentIndex(1)
                 elif (name == "LSCI_PT-100"):
                     self.curve_comboboxes[row].setCurrentIndex(2)
-                elif (name == "IEC_P100-RTD"):
+                elif (name == "IEC_P100_RTD"):
                     self.curve_comboboxes[row].setCurrentIndex(3)
-                elif (name == "IEC_P1000-RTD"):
+                elif (name == "IEC_P1000_RTD"):
                     self.curve_comboboxes[row].setCurrentIndex(4)
-                elif (name == "Simulated_Sensor-NTC"):
+                elif (name == "Simulated Senso"):
                     self.curve_comboboxes[row].setCurrentIndex(5)
                 else:
                     self.curve_comboboxes[row].setCurrentIndex(-1)
