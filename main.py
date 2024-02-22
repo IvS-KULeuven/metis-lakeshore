@@ -448,16 +448,15 @@ class TemperatureWindow(QWidget):
                 value = response[2]
                 excitation = '10µA' if value == '2' else '1mA' if value == '3' else ''
                 # self.table_widget.setItem(row, 3, QTableWidgetItem(excitation))
-                #TODO: check names
                 if (name == "LSCI_DT-600"):
                     self.curve_comboboxes[row].setCurrentIndex(0)
                 elif (name == "LSCI_DT-400"):
                     self.curve_comboboxes[row].setCurrentIndex(1)
                 elif (name == "LSCI_PT-100"):
                     self.curve_comboboxes[row].setCurrentIndex(2)
-                elif (name == "IEC_P100_RTD"):
+                elif (name == "IEC_PT100_RTD"):
                     self.curve_comboboxes[row].setCurrentIndex(3)
-                elif (name == "IEC_P1000_RTD"):
+                elif (name == "IEC_PT1000_RTD"):
                     self.curve_comboboxes[row].setCurrentIndex(4)
                 elif (name == "Simulated Senso"):
                     self.curve_comboboxes[row].setCurrentIndex(5)
@@ -838,6 +837,11 @@ class TemperatureWindow(QWidget):
                     input = i
                     break
                 i +=1
+            sensor_type_box = self.sensor_layout.itemAtPosition(input, 2).widget()
+            sensor_current_box = self.sensor_layout.itemAtPosition(input, 3).widget()
+            sensor_autorange_box = self.sensor_layout.itemAtPosition(input, 4).widget()
+            sensor_range_box = self.sensor_layout.itemAtPosition(input, 5).widget()
+            sensor_unit_box = self.sensor_layout.itemAtPosition(input, 6).widget()
             file = ""
             name = ""
             serial = ""
@@ -889,22 +893,18 @@ class TemperatureWindow(QWidget):
                     coefficient = 1                    
             if file != "":
                 message = f"CRVDEL {input}\n"
-                print(message)
                 self.ser.write(message.encode())
                 message = f"CRVHDR {input},{name},{serial},{format},{limit},{coefficient}\n"
-                print(message)
                 self.ser.write(message.encode())
                 try:
                     with open(file, "r") as opened_file:
-                        index = 0
+                        current_index = 0
                         for line in opened_file:
-                            index+=1
+                            current_index+=1
                             values = line.strip().split(',')
                             unit, temp = map(float, values)
-                            message = f"CRVPT {input},{index},{unit},{temp}\n"
-                            print(message)
+                            message = f"CRVPT {input},{current_index},{unit},{temp}\n"
                             self.ser.write(message.encode())
-                    print("complete")
                 except FileNotFoundError:
                     print("File not found.")
 
@@ -913,9 +913,40 @@ class TemperatureWindow(QWidget):
 
                 except Exception as e:
                     print("An error occurred:", e)
-                  
+            match index:
+                case 0:
+                    sensor_type_box.setCurrentIndex(0)
+                    sensor_unit_box.setCurrentIndex(0)
 
-        except serial.SerialException as e:
+                case 1:
+                    sensor_type_box.setCurrentIndex(0)
+                    sensor_unit_box.setCurrentIndex(0)
+
+                case 2:
+                    sensor_type_box.setCurrentIndex(1)
+                    sensor_current_box.setCurrentIndex(1)
+                    sensor_unit_box.setCurrentIndex(0)
+
+                case 3:
+                    sensor_type_box.setCurrentIndex(2)
+                    sensor_current_box.setCurrentIndex(0)
+                    sensor_autorange_box.setCurrentIndex(0)
+                    sensor_range_box.setCurrentIndex(2)
+                    sensor_unit_box.setCurrentIndex(2)     
+                case 4:
+                    sensor_type_box.setCurrentIndex(2)
+                    sensor_current_box.setCurrentIndex(0)
+                    sensor_autorange_box.setCurrentIndex(0)
+                    sensor_range_box.setCurrentIndex(0)
+                    sensor_unit_box.setCurrentIndex(2)    
+                case 5:
+                    sensor_type_box.setCurrentIndex(2)
+                    sensor_current_box.setCurrentIndex(1)
+                    sensor_autorange_box.setCurrentIndex(1)
+                    sensor_range_box.setCurrentIndex(3)
+                    sensor_unit_box.setCurrentIndex(0)   
+            
+        except Exception as e:
                 print(f"Error: {e}")
 
 
