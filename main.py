@@ -441,6 +441,7 @@ class TemperatureWindow(QWidget):
                     else:
                         unit = unit + " Ω"
                     self.table_widget.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
+                    self.calculate_power(row)
                 else:
                     self.table_widget.setItem(row, 2, QTableWidgetItem(""))
 
@@ -507,6 +508,68 @@ class TemperatureWindow(QWidget):
 
         except serial.SerialException as e:
             print(f"Error: {e}")
+
+    def calculate_power(self, row):
+        sensor_text = self.table_widget.item(row, 2).text()
+        excitation_text =self.table_widget.item(row, 3).text()
+
+        if (len(sensor_text) == 0 or len(excitation_text) == 0):
+            return
+        power_value = 0
+        sensor_unit = sensor_text[-1]
+        excitation_unit = excitation_text[-2:]
+
+        sensor_value = float(sensor_text[:-2])
+        excitation_value = float(excitation_text[:-3])
+
+        match excitation_unit:
+            case "mA":
+                excitation_value = excitation_value /1000
+            case "µA":
+                excitation_value = excitation_value /1000000
+            case "nA":
+                excitation_value = excitation_value /1000000000
+
+        match sensor_unit:
+            case "V":
+                power_value = excitation_value * sensor_value
+            case "Ω":
+                power_value = excitation_value * excitation_value * sensor_value
+
+        power_unit = " W"
+        multiplier = 1
+        if power_value < 1:
+            # Convert the float to a string
+            num_str = str(power_value)
+
+            # Split the string into integer and decimal parts
+            integer_part, decimal_part = num_str.split('.')
+
+            # Count the number of zeros in the decimal part until the first non-zero digit
+            num_zeros = 0
+            for digit in decimal_part:
+                if digit == '0':
+                    num_zeros += 1
+                else:
+                    break
+
+            # Determine the appropriate multiplier based on the number of zeros
+            if num_zeros > 5:
+                multiplier = 1000000000
+                power_unit = " nW"
+            elif num_zeros > 2:
+                multiplier = 1000000
+                power_unit = " µW"
+            else:
+                multiplier = 1000
+                power_unit = " mW"
+
+        # Multiply the number by the appropriate multiplier
+        adjusted_num = power_value * multiplier
+        power = str(round(adjusted_num, 2)) + power_unit
+        self.table_widget.item(row, 4).setText(power)
+
+
 
     def handle_module_name_change(self):
         new_name = self.module_name_label.text()
@@ -907,23 +970,15 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 message = f"CRVHDR {input},{name},{serial},{format},{limit},{coefficient}\n"
                 self.ser.write(message.encode())
-                try:
-                    with open(file, "r") as opened_file:
-                        current_index = 0
-                        for line in opened_file:
-                            current_index+=1
-                            values = line.strip().split(',')
-                            unit, temp = map(float, values)
-                            message = f"CRVPT {input},{current_index},{unit},{temp}\n"
-                            self.ser.write(message.encode())
-                except FileNotFoundError:
-                    print("File not found.")
+                with open(file, "r") as opened_file:
+                    current_index = 0
+                    for line in opened_file:
+                        current_index+=1
+                        values = line.strip().split(',')
+                        unit, temp = map(float, values)
+                        message = f"CRVPT {input},{current_index},{unit},{temp}\n"
+                        self.ser.write(message.encode())
 
-                except ValueError:
-                    print("Error parsing data.")
-
-                except Exception as e:
-                    print("An error occurred:", e)
                 # Change sensors
                 match index:
                     case 0:
@@ -956,7 +1011,7 @@ class TemperatureWindow(QWidget):
                         sensor_current_box.setCurrentIndex(1)
                         sensor_autorange_box.setCurrentIndex(1)
                         sensor_range_box.setCurrentIndex(3)
-                        sensor_unit_box.setCurrentIndex(0)   
+                        sensor_unit_box.setCurrentIndex(0)
             
         except Exception as e:
                 print(f"Error: {e}")
