@@ -573,6 +573,7 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 break
             i+=1
+        self.curve_comboboxes[i-1].setCurrentIndex(-1)
 
     def handle_sensor_change(self, index):
         #TODO: if type/power changes this function also gets called for every combobox -> fix that
@@ -913,38 +914,38 @@ class TemperatureWindow(QWidget):
 
                 except Exception as e:
                     print("An error occurred:", e)
-            match index:
-                case 0:
-                    sensor_type_box.setCurrentIndex(0)
-                    sensor_unit_box.setCurrentIndex(0)
+                match index:
+                    case 0:
+                        sensor_type_box.setCurrentIndex(0)
+                        sensor_unit_box.setCurrentIndex(0)
 
-                case 1:
-                    sensor_type_box.setCurrentIndex(0)
-                    sensor_unit_box.setCurrentIndex(0)
+                    case 1:
+                        sensor_type_box.setCurrentIndex(0)
+                        sensor_unit_box.setCurrentIndex(0)
 
-                case 2:
-                    sensor_type_box.setCurrentIndex(1)
-                    sensor_current_box.setCurrentIndex(1)
-                    sensor_unit_box.setCurrentIndex(0)
+                    case 2:
+                        sensor_type_box.setCurrentIndex(1)
+                        sensor_current_box.setCurrentIndex(1)
+                        sensor_unit_box.setCurrentIndex(0)
 
-                case 3:
-                    sensor_type_box.setCurrentIndex(2)
-                    sensor_current_box.setCurrentIndex(0)
-                    sensor_autorange_box.setCurrentIndex(0)
-                    sensor_range_box.setCurrentIndex(2)
-                    sensor_unit_box.setCurrentIndex(2)     
-                case 4:
-                    sensor_type_box.setCurrentIndex(2)
-                    sensor_current_box.setCurrentIndex(0)
-                    sensor_autorange_box.setCurrentIndex(0)
-                    sensor_range_box.setCurrentIndex(0)
-                    sensor_unit_box.setCurrentIndex(2)    
-                case 5:
-                    sensor_type_box.setCurrentIndex(2)
-                    sensor_current_box.setCurrentIndex(1)
-                    sensor_autorange_box.setCurrentIndex(1)
-                    sensor_range_box.setCurrentIndex(3)
-                    sensor_unit_box.setCurrentIndex(0)   
+                    case 3:
+                        sensor_type_box.setCurrentIndex(2)
+                        sensor_current_box.setCurrentIndex(0)
+                        sensor_autorange_box.setCurrentIndex(0)
+                        sensor_range_box.setCurrentIndex(2)
+                        sensor_unit_box.setCurrentIndex(2)     
+                    case 4:
+                        sensor_type_box.setCurrentIndex(2)
+                        sensor_current_box.setCurrentIndex(0)
+                        sensor_autorange_box.setCurrentIndex(0)
+                        sensor_range_box.setCurrentIndex(0)
+                        sensor_unit_box.setCurrentIndex(2)    
+                    case 5:
+                        sensor_type_box.setCurrentIndex(2)
+                        sensor_current_box.setCurrentIndex(1)
+                        sensor_autorange_box.setCurrentIndex(1)
+                        sensor_range_box.setCurrentIndex(3)
+                        sensor_unit_box.setCurrentIndex(0)   
             
         except Exception as e:
                 print(f"Error: {e}")
