@@ -303,7 +303,7 @@ class TemperatureWindow(QWidget):
         # Start timer for updating sensor units
         self.sensor_timer = QTimer(self)
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(self.read_temperature)
+        self.sensor_timer.timeout.connect(self.read_sensor_units)
         self.sensor_timer.start()
 
         # Connect signals
@@ -393,7 +393,7 @@ class TemperatureWindow(QWidget):
                     formatted_temp = temp.lstrip('+')  # Remove leading '+'
                     if  '.' in formatted_temp:
                         formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
-                    if formatted_temp[0] == ".":
+                    if len(formatted_temp) > 0 and formatted_temp[0] == ".":
                         formatted_temp = '0' + formatted_temp
                     formatted_temp = formatted_temp + " K"
                     if formatted_temp == '0.00000 K':
@@ -434,9 +434,13 @@ class TemperatureWindow(QWidget):
                     unit = unit.lstrip('+')  # Remove leading '+'
                     if '.' in unit:
                         unit = unit.lstrip('0')  # Remove leading '0's
-                    if unit[0] == ".":
+                    if len(unit) > 0 and unit[0] == ".":
                         unit = '0' + unit
-                    self.table_widget.setItem(row, 2, QTableWidgetItem(unit if unit != '0.000' else '0'))
+                    if(self.type_comboboxes[row].currentIndex() == 0):
+                        unit = unit + " V"
+                    else:
+                        unit = unit + " Ω"
+                    self.table_widget.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
                 else:
                     self.table_widget.setItem(row, 2, QTableWidgetItem(""))
 
@@ -857,42 +861,42 @@ class TemperatureWindow(QWidget):
             index = sender.currentIndex()
             match index:
                 case 0:
-                    file = "LSCI_DT600.txt"
+                    file = "curves/LSCI_DT600.txt"
                     name = "LSCI_DT-600"
                     serial = "Standard C"
                     format = 2
                     limit = 500
                     coefficient = 1
                 case 1:
-                    file = "LSCI_DT400.txt"
+                    file = "curves/LSCI_DT400.txt"
                     name = "LSCI_DT-400"
                     serial = "Standard C"
                     format = 2
                     limit = 475
                     coefficient = 1
                 case 2:
-                    file = "LSCI_PT100.txt"
+                    file = "curves/LSCI_PT100.txt"
                     name = "LSCI_PT-100"
                     serial = "STANDARD"
                     format = 3
                     limit = 800
                     coefficient = 2
                 case 3:
-                    file = "IEC_PT100_RTD.txt"
+                    file = "curves/IEC_PT100_RTD.txt"
                     name = "IEC_PT100_RTD"
                     serial = "STANDARD"
                     format = 3
                     limit = 800
                     coefficient = 2                
                 case 4:
-                    file = "IEC_PT1000_RTD.txt"
+                    file = "curves/IEC_PT1000_RTD.txt"
                     name = "IEC_PT1000_RTD"
                     serial = "STANDARD"
                     format = 3
                     limit = 800
                     coefficient = 2
                 case 5:
-                    file = "SIMULATED_SENSO.txt"
+                    file = "curves/SIMULATED_SENSO.txt"
                     name = "Simulated Senso"
                     serial = "Standard C"
                     format = 4
