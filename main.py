@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
 from PySide6.QtCore import QTimer
 import serial
+import time
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -137,7 +138,7 @@ class TemperatureWindow(QWidget):
         self.curve_comboboxes = []
         for i in range(1, 9):
             combobox = QComboBox()
-            combobox.addItems(["LSCI DT-600", "LSCI DT-400", "LSCI PT-100", "IEC P100 RTD", "IEC P1000 RTD", "Simulated Sensor-NTC"])
+            combobox.addItems(["LSCI DT-600", "LSCI DT-400", "LSCI PT-100", "IEC PT100 RTD", "IEC PT1000 RTD", "Simulated Sensor-NTC"])
             self.curve_comboboxes.append(combobox)
             self.curve_layout.addWidget(combobox, i, 1)
         
@@ -318,6 +319,7 @@ class TemperatureWindow(QWidget):
             self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.curve_delete_buttons[i].clicked.connect(self.delete_curve)
+            self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
 
 
     def read_general_information(self):
@@ -822,6 +824,96 @@ class TemperatureWindow(QWidget):
                         widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                         widget.setEnabled(False)
                         widget.setStyleSheet("QComboBox { color: darkgray; }")
+
+        except serial.SerialException as e:
+                print(f"Error: {e}")
+
+    def handle_curve_change(self, index):
+        try:
+            sender = self.sender()
+            input = 0
+            i = 1
+            for combobox in self.curve_comboboxes:
+                if combobox == sender:
+                    input = i
+                    break
+                i +=1
+            file = ""
+            name = ""
+            serial = ""
+            format = 0
+            coefficient = 0
+            index = sender.currentIndex()
+            match index:
+                case 0:
+                    file = "LSCI_DT600.txt"
+                    name = "LSCI_DT-600"
+                    serial = "Standard C"
+                    format = 2
+                    limit = 500
+                    coefficient = 1
+                case 1:
+                    file = "LSCI_DT400.txt"
+                    name = "LSCI_DT-400"
+                    serial = "Standard C"
+                    format = 2
+                    limit = 475
+                    coefficient = 1
+                case 2:
+                    file = "LSCI_PT100.txt"
+                    name = "LSCI_PT-100"
+                    serial = "STANDARD"
+                    format = 3
+                    limit = 800
+                    coefficient = 2
+                case 3:
+                    file = "IEC_PT100_RTD.txt"
+                    name = "IEC_PT100_RTD"
+                    serial = "STANDARD"
+                    format = 3
+                    limit = 800
+                    coefficient = 2                
+                case 4:
+                    file = "IEC_PT1000_RTD.txt"
+                    name = "IEC_PT1000_RTD"
+                    serial = "STANDARD"
+                    format = 3
+                    limit = 800
+                    coefficient = 2
+                case 5:
+                    file = "SIMULATED_SENSO.txt"
+                    name = "Simulated Senso"
+                    serial = "Standard C"
+                    format = 4
+                    limit = 450
+                    coefficient = 1                    
+            if file != "":
+                message = f"CRVDEL {input}\n"
+                print(message)
+                self.ser.write(message.encode())
+                message = f"CRVHDR {input},{name},{serial},{format},{limit},{coefficient}\n"
+                print(message)
+                self.ser.write(message.encode())
+                try:
+                    with open(file, "r") as opened_file:
+                        index = 0
+                        for line in opened_file:
+                            index+=1
+                            values = line.strip().split(',')
+                            unit, temp = map(float, values)
+                            message = f"CRVPT {input},{index},{unit},{temp}\n"
+                            print(message)
+                            self.ser.write(message.encode())
+                    print("complete")
+                except FileNotFoundError:
+                    print("File not found.")
+
+                except ValueError:
+                    print("Error parsing data.")
+
+                except Exception as e:
+                    print("An error occurred:", e)
+                  
 
         except serial.SerialException as e:
                 print(f"Error: {e}")
