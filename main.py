@@ -295,10 +295,16 @@ class TemperatureWindow(QWidget):
         self.read_temperature()
 
         # Start timer for updating temperature
-        self.timer = QTimer(self)
-        self.timer.setInterval(10000)  # Update every 10 seconds
-        self.timer.timeout.connect(self.read_temperature)
-        self.timer.start()
+        self.temp_timer = QTimer(self)
+        self.temp_timer.setInterval(10000)  # Update every 10 seconds
+        self.temp_timer.timeout.connect(self.read_temperature)
+        self.temp_timer.start()
+
+        # Start timer for updating sensor units
+        self.sensor_timer = QTimer(self)
+        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
+        self.sensor_timer.timeout.connect(self.read_temperature)
+        self.sensor_timer.start()
 
         # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
@@ -424,7 +430,7 @@ class TemperatureWindow(QWidget):
 
             # Update table with sensor units
             for row, unit in enumerate(sensor_units):
-                if(self.power_comboboxes[row].currentIndex() == 1):
+                if(self.power_comboboxes[row].currentIndex() == 1): # If power is on
                     unit = unit.lstrip('+')  # Remove leading '+'
                     if '.' in unit:
                         unit = unit.lstrip('0')  # Remove leading '0's
@@ -914,6 +920,7 @@ class TemperatureWindow(QWidget):
 
                 except Exception as e:
                     print("An error occurred:", e)
+                # Change sensors
                 match index:
                     case 0:
                         sensor_type_box.setCurrentIndex(0)
