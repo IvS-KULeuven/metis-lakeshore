@@ -510,64 +510,69 @@ class TemperatureWindow(QWidget):
             print(f"Error: {e}")
 
     def calculate_power(self, row):
-        sensor_text = self.table_widget.item(row, 2).text()
-        excitation_text =self.table_widget.item(row, 3).text()
+        try:
+            sensor_text = self.table_widget.item(row, 2).text()
+            excitation_text =self.table_widget.item(row, 3).text()
 
-        if (len(sensor_text) == 0 or len(excitation_text) == 0):
-            return
-        power_value = 0
-        sensor_unit = sensor_text[-1]
-        excitation_unit = excitation_text[-2:]
+            if (len(sensor_text) == 0 or len(excitation_text) == 0):
+                return
+            power_value = 0
+            sensor_unit = sensor_text[-1]
+            excitation_unit = excitation_text[-2:]
 
-        sensor_value = float(sensor_text[:-2])
-        excitation_value = float(excitation_text[:-3])
+            sensor_value = float(sensor_text[:-2])
+            excitation_value = float(excitation_text[:-3])
 
-        match excitation_unit:
-            case "mA":
-                excitation_value = excitation_value /1000
-            case "µA":
-                excitation_value = excitation_value /1000000
-            case "nA":
-                excitation_value = excitation_value /1000000000
+            match excitation_unit:
+                case "mA":
+                    excitation_value = excitation_value /1000
+                case "µA":
+                    excitation_value = excitation_value /1000000
+                case "nA":
+                    excitation_value = excitation_value /1000000000
 
-        match sensor_unit:
-            case "V":
-                power_value = excitation_value * sensor_value
-            case "Ω":
-                power_value = excitation_value * excitation_value * sensor_value
+            match sensor_unit:
+                case "V":
+                    power_value = excitation_value * sensor_value
+                case "Ω":
+                    power_value = excitation_value * excitation_value * sensor_value
 
-        power_unit = " W"
-        multiplier = 1
-        if power_value < 1:
-            # Convert the float to a string
-            num_str = str(power_value)
+            power_unit = " W"
+            multiplier = 1
+            if power_value < 1:
+                # Convert the float to a string
+                num_str = str(power_value)
 
-            # Split the string into integer and decimal parts
-            integer_part, decimal_part = num_str.split('.')
+                # Split the string into integer and decimal parts
+                integer_part, decimal_part = num_str.split('.')
 
-            # Count the number of zeros in the decimal part until the first non-zero digit
-            num_zeros = 0
-            for digit in decimal_part:
-                if digit == '0':
-                    num_zeros += 1
+                # Count the number of zeros in the decimal part until the first non-zero digit
+                num_zeros = 0
+                for digit in decimal_part:
+                    if digit == '0':
+                        num_zeros += 1
+                    else:
+                        break
+
+                # Determine the appropriate multiplier based on the number of zeros
+                if num_zeros > 5:
+                    multiplier = 1000000000
+                    power_unit = " nW"
+                elif num_zeros > 2:
+                    multiplier = 1000000
+                    power_unit = " µW"
                 else:
-                    break
+                    multiplier = 1000
+                    power_unit = " mW"
 
-            # Determine the appropriate multiplier based on the number of zeros
-            if num_zeros > 5:
-                multiplier = 1000000000
-                power_unit = " nW"
-            elif num_zeros > 2:
-                multiplier = 1000000
-                power_unit = " µW"
-            else:
-                multiplier = 1000
-                power_unit = " mW"
+            # Multiply the number by the appropriate multiplier
+            adjusted_num = power_value * multiplier
+            power = str(round(adjusted_num, 2)) + power_unit
+            self.table_widget.item(row, 4).setText(power)
 
-        # Multiply the number by the appropriate multiplier
-        adjusted_num = power_value * multiplier
-        power = str(round(adjusted_num, 2)) + power_unit
-        self.table_widget.item(row, 4).setText(power)
+        except Exception as e:
+            print(f"Error: {e}")
+    
 
 
 
@@ -869,7 +874,7 @@ class TemperatureWindow(QWidget):
                         excitation = range_combo_box.currentText()
                         # Extracting the part between parentheses
                         start_index = excitation.find('(') + 1
-                        end_index = excitation.find(')', start_index)
+                        end_index = excitation.find(')', start_index)print(f"Error: {e}")
                         parsed_excitation = excitation[start_index:end_index]
                         self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
                         for col in range(2, 7):
