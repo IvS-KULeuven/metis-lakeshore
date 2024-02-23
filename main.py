@@ -1,5 +1,6 @@
+import PySide6
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 import serial
 import time
 
@@ -9,9 +10,15 @@ class TemperatureWindow(QWidget):
 
         self.layout = QHBoxLayout(self)
 
-        # Left layout for general information
+        # Left layout for lakeshore information
         self.left_layout = QVBoxLayout()
-
+        
+        # Create QHBoxlayout for general and connection part
+        self.left_hlayout = QHBoxLayout()
+        
+        # Create VBoxlayout for general part
+        self.general_vlayout = QVBoxLayout()
+        
         # General section frame
         self.general_section_frame = QFrame()
         self.general_section_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
@@ -44,12 +51,22 @@ class TemperatureWindow(QWidget):
         self.general_section_layout.addWidget(QLabel("<b>Screen Brightness</b>"), 3, 0)
         self.general_section_layout.addWidget(self.brightness_combobox, 3, 1)
         self.general_section_layout.addWidget(self.restore_button, 4, 0, 1, 2)
-
+        
+        # Add widgets to general_vlayout
+        self.general_vlayout.addWidget(self.general_label)
+        self.general_vlayout.addWidget(self.general_section_frame)
+        
+        # Set alignment of the general_vlayout to the left
+        self.general_vlayout.setAlignment(Qt.AlignLeft)
+        
+        # Add general_vlayout to left_hlayout
+        self.left_hlayout.addLayout(self.general_vlayout)
+        
         # Create QHBoxlayout for Profibus and Curve part
-        self.left_hlayout = QHBoxLayout()
+        self.left_h2layout = QHBoxLayout()
 
         # Set size constraint to allow stretching
-        self.left_hlayout.setSizeConstraint(QLayout.SetMinimumSize)
+        self.left_h2layout.setSizeConstraint(QLayout.SetMinimumSize)
 
         # Profibus communication section
         # Vbox for Profibus part
@@ -154,9 +171,9 @@ class TemperatureWindow(QWidget):
         self.curve_vlayout.addWidget(self.curve_label)
         self.curve_vlayout.addWidget(self.curve_frame)
 
-        # Add profibus and curve layouts to left_hlayout
-        self.left_hlayout.addLayout(self.profibus_vlayout, stretch=1)
-        self.left_hlayout.addLayout(self.curve_vlayout, stretch=1)
+        # Add profibus and curve layouts to left_h2layout
+        self.left_h2layout.addLayout(self.profibus_vlayout, stretch=1)
+        self.left_h2layout.addLayout(self.curve_vlayout, stretch=1)
 
         # Sensor setup section
         self.sensor_label = QLabel("<b>Sensor setup</b>")
@@ -241,13 +258,13 @@ class TemperatureWindow(QWidget):
             self.sensor_layout.addWidget(combo_box, row, 6)
 
         # Add sections to general layout
-        self.left_layout.addWidget(self.general_label)
-        self.left_layout.addWidget(self.general_section_frame)
         self.left_layout.addLayout(self.left_hlayout)
+        # self.left_layout.addWidget(self.general_section_frame)
+        self.left_layout.addLayout(self.left_h2layout)
         self.left_layout.addWidget(self.sensor_label)
         self.left_layout.addWidget(self.sensor_frame)
 
-        # Stretch the left_hlayout within the left_layout
+        # Stretch the left_h2layout within the left_layout
         self.left_layout.setStretch(2, 1)
 
         # Right layout for temperature table
@@ -279,7 +296,7 @@ class TemperatureWindow(QWidget):
         self.layout.addLayout(self.right_layout)
 
         # Set serial port settings and read data
-        self.port = '/dev/ttyUSB0'
+        self.port = 'COM3'
         self.baudrate = 115200
         self.timeout = 1
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
@@ -874,7 +891,7 @@ class TemperatureWindow(QWidget):
                         excitation = range_combo_box.currentText()
                         # Extracting the part between parentheses
                         start_index = excitation.find('(') + 1
-                        end_index = excitation.find(')', start_index)print(f"Error: {e}")
+                        end_index = excitation.find(')', start_index)
                         parsed_excitation = excitation[start_index:end_index]
                         self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
                         for col in range(2, 7):
