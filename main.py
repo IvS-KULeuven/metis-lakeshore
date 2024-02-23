@@ -2,6 +2,7 @@ import PySide6
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
 from PySide6.QtCore import QTimer, Qt
 import serial
+import serial.tools.list_ports
 import time
 
 class TemperatureWindow(QWidget):
@@ -59,8 +60,26 @@ class TemperatureWindow(QWidget):
         # Set alignment of the general_vlayout to the left
         self.general_vlayout.setAlignment(Qt.AlignLeft)
         
-        # Add general_vlayout to left_hlayout
+        # CONNECTION
+        # Create VBoxlayout for connection part
+        self.connection_vlayout = QVBoxLayout()
+        
+        # Connection label 
+        self.connection_label = QLabel("<b>Connection</b>")
+        self.connection_label.setStyleSheet("font-size: 14pt;")
+        
+        # Connection combobox
+        self.connection_combobox = QComboBox()
+        
+        self.populate_combobox()
+        
+        # Add widgets to connection_vlayout
+        self.connection_vlayout.addWidget(self.connection_label)
+        self.connection_vlayout.addWidget(self.connection_combobox)
+        
+        # Add general_vlayout and connection_vlayout to left_hlayout
         self.left_hlayout.addLayout(self.general_vlayout)
+        self.left_hlayout.addLayout(self.connection_vlayout)
         
         # Create QHBoxlayout for Profibus and Curve part
         self.left_h2layout = QHBoxLayout()
@@ -343,7 +362,17 @@ class TemperatureWindow(QWidget):
             self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.curve_delete_buttons[i].clicked.connect(self.delete_curve)
             self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
+            
+    def populate_combobox(self):
+        # Scan USB ports for connected devices
+        devices = serial.tools.list_ports.comports()
 
+        # Add devices with baudrate 115200 to the combobox
+        for device in devices:
+            print(device)
+            with serial.Serial(device.device) as ser:
+                # if ser.baudrate == 115200:
+                self.connection_combobox.addItem(device.device)
 
     def read_general_information(self):
         try:
