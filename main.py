@@ -70,11 +70,27 @@ class TemperatureWindow(QWidget):
         
         # Connection combobox
         self.connection_combobox = QComboBox()
-        
+        self.devices_list = []
+        # Set serial port settings and read data
+        self.port = ''
+        self.baudrate = 115200
+        self.timeout = 1
         self.populate_combobox()
+        
+        # Create HboxLayout for 2 buttons
+        self.hbutton_layout = QHBoxLayout()
+        
+        # Create buttons
+        self.connect_button = QPushButton("Connect")
+        self.disconnect_button = QPushButton("Disconnect")
+        
+        # Add buttons to hbutton_layout
+        self.hbutton_layout.addWidget(self.connect_button)
+        self.hbutton_layout.addWidget(self.disconnect_button)
         
         # Add widgets to connection_vlayout
         self.connection_vlayout.addWidget(self.connection_label)
+        self.connection_vlayout.addLayout(self.hbutton_layout)
         self.connection_vlayout.addWidget(self.connection_combobox)
         
         # Add general_vlayout and connection_vlayout to left_hlayout
@@ -314,40 +330,13 @@ class TemperatureWindow(QWidget):
         self.layout.addLayout(self.left_layout)
         self.layout.addLayout(self.right_layout)
 
-        # Set serial port settings and read data
-        self.port = 'COM3'
-        self.baudrate = 115200
-        self.timeout = 1
-        self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-        self.read_general_information()
-        self.read_brightness()
-        self.read_input_names()
-        self.read_address()
-        self.read_slot_count()
-        self.read_slots()
-        self.read_sensor_setup()
-        self.read_curves()
-        self.read_sensor_units()
-        self.read_temperature()
-
-        # Start timer for updating temperature
-        self.temp_timer = QTimer(self)
-        self.temp_timer.setInterval(10000)  # Update every 10 seconds
-        self.temp_timer.timeout.connect(self.read_temperature)
-        self.temp_timer.start()
-
-        # Start timer for updating sensor units
-        self.sensor_timer = QTimer(self)
-        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(self.read_sensor_units)
-        self.sensor_timer.start()
-
         # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
         self.address_line_edit.editingFinished.connect(self.handle_address_change)
         self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
         self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
         self.restore_button.clicked.connect(self.restore_factory_settings)
+        self.connect_button.clicked.connect(self.handle_connect)
         # Connect signals for comboboxes and others
         for i in range(8):
             self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
@@ -369,11 +358,40 @@ class TemperatureWindow(QWidget):
 
         # Add devices with baudrate 115200 to the combobox
         for device in devices:
-            print(device)
             with serial.Serial(device.device) as ser:
                 # if ser.baudrate == 115200:
-                self.connection_combobox.addItem(device.device)
+                self.connection_combobox.addItem(device.description)
+                self.devices_list.append(device)
+                
+    def handle_connect(self):
+        i = self.connection_combobox.currentIndex()
+        device = self.devices_list[i]
+        self.port = device.device
+        self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
+        self.read_general_information()
+        self.read_brightness()
+        self.read_input_names()
+        self.read_address()
+        self.read_slot_count()
+        self.read_slots()
+        self.read_sensor_setup()
+        self.read_curves()
+        self.read_sensor_units()
+        self.read_temperature()
+        
+        # Start timer for updating temperature
+        self.temp_timer = QTimer(self)
+        self.temp_timer.setInterval(10000)  # Update every 10 seconds
+        self.temp_timer.timeout.connect(self.read_temperature)
+        self.temp_timer.start()
 
+        # Start timer for updating sensor units
+        self.sensor_timer = QTimer(self)
+        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
+        self.sensor_timer.timeout.connect(self.read_sensor_units)
+        self.sensor_timer.start()
+        
+        
     def read_general_information(self):
         try:
             # Retrieve and display module name
