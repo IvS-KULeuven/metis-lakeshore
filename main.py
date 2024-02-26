@@ -2,8 +2,9 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, Q
 from PySide6.QtCore import QTimer
 import serial
 import serial.tools.list_ports
-from general_ui import GeneralUI
-from connection_ui import ConnectionUI
+from ui.general_ui import GeneralUI
+from ui.connection_ui import ConnectionUI
+from ui.profibus_ui import ProfibusUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -41,60 +42,9 @@ class TemperatureWindow(QWidget):
         # Set size constraint to allow stretching
         self.left_h2layout.setSizeConstraint(QLayout.SetMinimumSize)
 
-        # Profibus communication section
-        # Vbox for Profibus part
-        self.profibus_vlayout = QVBoxLayout()
+        # Create an instance of GeneralUI
+        self.profibus_ui = ProfibusUI()
 
-        # New QLabel for PROFIBUS
-        self.profibus_label = QLabel("<b>PROFIBUS communication</b>")
-        self.profibus_label.setStyleSheet("font-size: 14pt;")
-
-        # New QFrame for PROFIBUS communication
-        self.profibus_frame = QFrame()
-        self.profibus_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
-        self.profibus_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        # Grid layout for PROFIBUS communication
-        self.profibus_layout = QGridLayout()
-        self.profibus_frame.setLayout(self.profibus_layout)
-        self.profibus_layout.addWidget(QLabel("<b>Address</b>"), 0, 0)
-        self.address_line_edit = QLineEdit()
-        self.profibus_layout.addWidget(self.address_line_edit, 0, 1)
-        self.profibus_layout.addWidget(QLabel("<b>Slot Count</b>"), 1, 0)
-        self.slot_count_combobox = QComboBox()
-        self.slot_count_combobox.addItems([str(i) for i in range(1, 9)])
-        self.profibus_layout.addWidget(self.slot_count_combobox, 1, 1)
-
-        # Add an empty row
-        self.profibus_layout.addWidget(QLabel(""), 2, 0)
-
-        # Header labels
-        self.profibus_layout.addWidget(QLabel("<b>Channel</b>"), 3, 1)
-        self.profibus_layout.addWidget(QLabel("<b>Units</b>"), 3, 2)
-
-        # Labels for Slot1-8
-        for i in range(1, 9):
-            self.profibus_layout.addWidget(QLabel(f"<b>Slot {i}</b>"), i + 3, 0)
-
-        # Comboboxes for Channel
-        self.channel_comboboxes = []
-        for i in range(1, 9):
-            channel_combobox = QComboBox()
-            channel_combobox.addItems([str(j) for j in range(1, 9)])
-            self.channel_comboboxes.append(channel_combobox)
-            self.profibus_layout.addWidget(channel_combobox, i + 3, 1)
-
-        # Comboboxes for Units
-        self.units_comboboxes = []
-        for i in range(1, 9):
-            units_combobox = QComboBox()
-            units_combobox.addItems(["Kelvin", "Celsius", "sensor", "Fahrenheit"])
-            self.units_comboboxes.append(units_combobox)
-            self.profibus_layout.addWidget(units_combobox, i + 3, 2)
-        
-        # Add widgets to vlayout
-        self.profibus_vlayout.addWidget(self.profibus_label)
-        self.profibus_vlayout.addWidget(self.profibus_frame)
 
         # Curve setup section 
         # Vbox for Curve part
@@ -145,7 +95,7 @@ class TemperatureWindow(QWidget):
         self.curve_vlayout.addWidget(self.curve_frame)
 
         # Add profibus and curve layouts to left_h2layout
-        self.left_h2layout.addLayout(self.profibus_vlayout, stretch=1)
+        self.left_h2layout.addLayout(self.profibus_ui.vlayout, stretch=1)
         self.left_h2layout.addLayout(self.curve_vlayout, stretch=1)
 
         # Sensor setup section
@@ -313,14 +263,14 @@ class TemperatureWindow(QWidget):
 
         # Connect signals
         self.general_ui.module_name_label.editingFinished.connect(self.handle_module_name_change)
-        self.address_line_edit.editingFinished.connect(self.handle_address_change)
+        self.profibus_ui.address_line_edit.editingFinished.connect(self.handle_address_change)
         self.general_ui.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
-        self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
+        self.profibus_ui.slot_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
         self.general_ui.restore_button.clicked.connect(self.handle_restore_factory_settings)
         # Connect signals for comboboxes and others
         for i in range(8):
-            self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
-            self.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.profibus_ui.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.profibus_ui.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
             self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
             self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.line_edits[i].editingFinished.connect(self.handle_name_change)
@@ -345,15 +295,15 @@ class TemperatureWindow(QWidget):
             
             # Disconnect signals
             self.general_ui.module_name_label.editingFinished.disconnect(self.handle_module_name_change)
-            self.address_line_edit.editingFinished.disconnect(self.handle_address_change)
+            self.profibus_ui.address_line_edit.editingFinished.disconnect(self.handle_address_change)
             self.general_ui.brightness_combobox.currentIndexChanged.disconnect(self.handle_brightness_change)
-            self.slot_count_combobox.currentIndexChanged.disconnect(self.handle_slot_count_change)
+            self.profibus_ui.slot_combobox.currentIndexChanged.disconnect(self.handle_slot_count_change)
             self.general_ui.restore_button.clicked.disconnect(self.handle_restore_factory_settings)
 
             # Disconnect signals for comboboxes and others
             for i in range(8):
-                self.channel_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
-                self.units_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
+                self.profibus_ui.channel_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
+                self.profibus_ui.units_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
                 self.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
                 self.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
                 self.line_edits[i].editingFinished.disconnect(self.handle_name_change)
@@ -523,7 +473,7 @@ class TemperatureWindow(QWidget):
             message = "ADDR?\n"
             self.ser.write(message.encode())
             address = self.ser.read(1024).decode().strip()
-            self.address_line_edit.setText(address)
+            self.profibus_ui.address_line_edit.setText(address)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -533,7 +483,7 @@ class TemperatureWindow(QWidget):
             message = "PROFINUM?\n"
             self.ser.write(message.encode())
             value = int(self.ser.read(1024).decode().strip())
-            self.slot_count_combobox.setCurrentIndex(value)
+            self.profibus_ui.slot_combobox.setCurrentIndex(value)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -545,8 +495,8 @@ class TemperatureWindow(QWidget):
                 message = f"PROFISLOT? {input_number}\n"
                 self.ser.write(message.encode())
                 data = self.ser.read(1024).decode().strip().split(",")[:2]
-                self.channel_comboboxes[row].setCurrentIndex(int(data[0])-1)
-                self.units_comboboxes[row].setCurrentIndex(int(data[1])-1)
+                self.profibus_ui.channel_comboboxes[row].setCurrentIndex(int(data[0])-1)
+                self.profibus_ui.units_comboboxes[row].setCurrentIndex(int(data[1])-1)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -617,7 +567,7 @@ class TemperatureWindow(QWidget):
         self.ser.write(message.encode())
 
     def handle_address_change(self):
-        new_address = int(self.address_line_edit.text())
+        new_address = int(self.profibus_ui.address_line_edit.text())
         message = f"ADDR {new_address}\n"
         self.ser.write(message.encode())
 
@@ -627,17 +577,17 @@ class TemperatureWindow(QWidget):
         self.ser.write(message.encode())
     
     def handle_slot_count_change(self, index):
-        selected_slot = self.slot_count_combobox.currentIndex()
+        selected_slot = self.profibus_ui.slot_combobox.currentIndex()
         message = f"PROFINUM {selected_slot}\n"
         self.ser.write(message.encode())
     
     def handle_channel_unit_change(self):
         sender_combobox = self.sender()
-        row = self.profibus_layout.getItemPosition(self.profibus_layout.indexOf(sender_combobox))[0]
+        row = self.profibus_ui.layout.getItemPosition(self.profibus_ui.layout.indexOf(sender_combobox))[0]
         input_number = row - 3  # Offset by 3 to account for the header rows
 
-        channel_index = self.channel_comboboxes[input_number-1].currentIndex()
-        unit_index = self.units_comboboxes[input_number-1].currentIndex()
+        channel_index = self.profibus_ui.channel_comboboxes[input_number-1].currentIndex()
+        unit_index = self.profibus_ui.units_comboboxes[input_number-1].currentIndex()
 
         self.handle_comboboxes_change(input_number, channel_index, unit_index)
 
