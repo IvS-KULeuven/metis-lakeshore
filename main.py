@@ -7,6 +7,7 @@ from ui.connection_ui import ConnectionUI
 from ui.profibus_ui import ProfibusUI
 from ui.curve_ui import CurveUI
 from ui.sensor_ui import SensorUI
+from ui.temperature_ui import TemperatureUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -41,9 +42,6 @@ class TemperatureWindow(QWidget):
         # Create QHBoxlayout for Profibus and Curve part
         self.left_h2layout = QHBoxLayout()
 
-        # Set size constraint to allow stretching
-        self.left_h2layout.setSizeConstraint(QLayout.SetMinimumSize)
-
         # Create an instance of GeneralUI
         self.profibus_ui = ProfibusUI()
 
@@ -63,36 +61,13 @@ class TemperatureWindow(QWidget):
         self.left_layout.addWidget(self.sensor_ui.title_label)
         self.left_layout.addWidget(self.sensor_ui.frame)
 
-        # Stretch the left_h2layout within the left_layout
-        self.left_layout.setStretch(2, 1)
+        # Create an instance of TemperatureUI
+        self.temperature_ui = TemperatureUI()
 
-        # Right layout for temperature table
-        self.right_layout = QVBoxLayout()
-        self.table_widget = QTableWidget()
-        self.table_widget.setColumnCount(5)
-        self.table_widget.setRowCount(8)
-        self.table_widget.setHorizontalHeaderLabels(["Name", "Temperature", "Sensor units", "Excitation", "Power"])
-
-        # Populate table with sample data
-        for row in range(8):
-            self.table_widget.setItem(row, 0, QTableWidgetItem(""))
-            self.table_widget.setItem(row, 1, QTableWidgetItem(""))
-            self.table_widget.setItem(row, 2, QTableWidgetItem(""))
-            self.table_widget.setItem(row, 3, QTableWidgetItem(""))
-            self.table_widget.setItem(row, 4, QTableWidgetItem(""))
-
-        # Set size policy to expand vertically
-        self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # Set vertical header to resize to contents
-        self.table_widget.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
-        # Add table to right layout
-        self.right_layout.addWidget(self.table_widget)
 
         # Add left and right layouts to main layout
         self.layout.addLayout(self.left_layout)
-        self.layout.addLayout(self.right_layout)
+        self.layout.addLayout(self.temperature_ui.vlayout)
 
         # Connect connect, disconnect and refresh buttons
         self.connection_ui.connect_button.clicked.connect(self.handle_connect)
@@ -240,7 +215,7 @@ class TemperatureWindow(QWidget):
                 message = f"INNAME? {input_number}\n"
                 self.ser.write(message.encode())
                 name = self.ser.read(1024).decode().strip()
-                self.table_widget.setItem(row, 0, QTableWidgetItem(name))
+                self.temperature_ui.table.setItem(row, 0, QTableWidgetItem(name))
                 self.sensor_ui.name_line_edits[row].setText(name)
                 self.curve_ui.name_labels[row].setText(name)
         except Exception as e:
@@ -280,9 +255,9 @@ class TemperatureWindow(QWidget):
                                 formatted_temp = "S.UNDER"
                             case "128":
                                 formatted_temp = "S.OVER"
-                    self.table_widget.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
+                    self.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
                 else:
-                    self.table_widget.setItem(row, 1, QTableWidgetItem(""))
+                    self.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
 
         except Exception as e:
             print(f"Error: {e}")
@@ -309,13 +284,13 @@ class TemperatureWindow(QWidget):
                         unit = unit + " V"
                     else:
                         unit = unit + " Ω"
-                    self.table_widget.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
+                    self.temperature_ui.table.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
                     self.set_excitation(row)
                     self.calculate_power(row)
                 else:
-                    self.table_widget.setItem(row, 2, QTableWidgetItem(""))
-                    self.table_widget.setItem(row, 3, QTableWidgetItem(""))
-                    self.table_widget.setItem(row, 4, QTableWidgetItem(""))
+                    self.temperature_ui.table.setItem(row, 2, QTableWidgetItem(""))
+                    self.temperature_ui.table.setItem(row, 3, QTableWidgetItem(""))
+                    self.temperature_ui.table.setItem(row, 4, QTableWidgetItem(""))
 
         except Exception as e:
             print(f"Error: {e}")
@@ -380,8 +355,8 @@ class TemperatureWindow(QWidget):
 
     def calculate_power(self, row):
         try:
-            sensor_text = self.table_widget.item(row, 2).text()
-            excitation_text =self.table_widget.item(row, 3).text()
+            sensor_text = self.temperature_ui.table.item(row, 2).text()
+            excitation_text =self.temperature_ui.table.item(row, 3).text()
 
             if (len(sensor_text) == 0 or len(excitation_text) == 0):
                 return
@@ -423,7 +398,7 @@ class TemperatureWindow(QWidget):
             # Multiply the number by the appropriate multiplier
             adjusted_num = power_value * multiplier
             power = str(round(adjusted_num, 2)) + power_unit
-            self.table_widget.item(row, 4).setText(power)
+            self.temperature_ui.table.item(row, 4).setText(power)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -435,7 +410,7 @@ class TemperatureWindow(QWidget):
         start_index = excitation.find('(') + 1
         end_index = excitation.find(')', start_index)
         parsed_excitation = excitation[start_index:end_index]
-        self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
+        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem(parsed_excitation))
 
 
     def handle_module_name_change(self):
@@ -496,7 +471,7 @@ class TemperatureWindow(QWidget):
         message = f"INNAME {row+1},{new_name}\n"
         self.ser.write(message.encode())
 
-        self.table_widget.setItem(row, 0, QTableWidgetItem(new_name))
+        self.temperature_ui.table.setItem(row, 0, QTableWidgetItem(new_name))
         self.sensor_ui.name_line_edits[row].setText(new_name)
         self.curve_ui.name_labels[row].setText(new_name)
     
@@ -700,7 +675,7 @@ class TemperatureWindow(QWidget):
                 if int(enabled) == 1:
                     # Diode
                     if int(sensor_type) == 1:
-                        self.table_widget.setItem(row, 3, QTableWidgetItem("10 µA"))
+                        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem("10 µA"))
                         range_combo_box.clear()
                         range_combo_box.addItems(["7.5 V (10 µA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
@@ -714,7 +689,7 @@ class TemperatureWindow(QWidget):
                                 widget.setStyleSheet("QComboBox { color: darkgray; }")
                     # Platinum RTD
                     elif int(sensor_type) == 2:
-                        self.table_widget.setItem(row, 3, QTableWidgetItem("1 mA"))
+                        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem("1 mA"))
                         range_combo_box.clear()
                         range_combo_box.addItems(["1 kΩ (1 mA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
