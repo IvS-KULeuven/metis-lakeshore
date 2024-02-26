@@ -1,9 +1,8 @@
-import PySide6
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
 from PySide6.QtCore import QTimer, Qt
 import serial
 import serial.tools.list_ports
-import time
+from general_ui import GeneralUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -16,49 +15,9 @@ class TemperatureWindow(QWidget):
         
         # Create QHBoxlayout for general and connection part
         self.left_hlayout = QHBoxLayout()
-        
-        # Create VBoxlayout for general part
-        self.general_vlayout = QVBoxLayout()
-        
-        # General section frame
-        self.general_section_frame = QFrame()
-        self.general_section_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
-        self.general_section_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        # General section grid layout
-        self.general_section_layout = QGridLayout(self.general_section_frame)
-
-        # General label 
-        self.general_label = QLabel("<b>General</b>")
-        self.general_label.setStyleSheet("font-size: 14pt;")
-
-        # Restore factory settings button
-        self.restore_button = QPushButton("Restore factory settings")
-
-        # Labels for general information
-        self.module_name_label = QLineEdit()
-        self.serial_number_label = QLabel()
-        self.firmware_version_label = QLabel()
-        self.brightness_combobox = QComboBox()
-        self.brightness_combobox.addItems(["Off", "Low", "Medium", "High", "Max"])
-
-        # Add labels to general grid layout
-        self.general_section_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
-        self.general_section_layout.addWidget(self.module_name_label, 0, 1)
-        self.general_section_layout.addWidget(QLabel("<b>Serial Number</b>"), 1, 0)
-        self.general_section_layout.addWidget(self.serial_number_label, 1, 1)
-        self.general_section_layout.addWidget(QLabel("<b>Firmware Version</b>"), 2, 0)
-        self.general_section_layout.addWidget(self.firmware_version_label, 2, 1)
-        self.general_section_layout.addWidget(QLabel("<b>Screen Brightness</b>"), 3, 0)
-        self.general_section_layout.addWidget(self.brightness_combobox, 3, 1)
-        self.general_section_layout.addWidget(self.restore_button, 4, 0, 1, 2)
-        
-        # Add widgets to general_vlayout
-        self.general_vlayout.addWidget(self.general_label)
-        self.general_vlayout.addWidget(self.general_section_frame)
-        
-        # Set alignment of the general_vlayout to the left
-        self.general_vlayout.setAlignment(Qt.AlignLeft)
+        # Create an instance of GeneralUI
+        self.general_ui = GeneralUI()
         
         # CONNECTION
         # Create VBoxlayout for connection part
@@ -104,7 +63,7 @@ class TemperatureWindow(QWidget):
         self.connection_vlayout.addWidget(self.connection_combobox)
         
         # Add general_vlayout and connection_vlayout to left_hlayout
-        self.left_hlayout.addLayout(self.general_vlayout)
+        self.left_hlayout.addLayout(self.general_ui.vlayout)
         self.left_hlayout.addLayout(self.connection_vlayout)
         
         # Create QHBoxlayout for Profibus and Curve part
@@ -384,11 +343,11 @@ class TemperatureWindow(QWidget):
         self.read_temperature()
 
         # Connect signals
-        self.module_name_label.editingFinished.connect(self.handle_module_name_change)
+        self.general_ui.module_name_label.editingFinished.connect(self.handle_module_name_change)
         self.address_line_edit.editingFinished.connect(self.handle_address_change)
-        self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
+        self.general_ui.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
         self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
-        self.restore_button.clicked.connect(self.handle_restore_factory_settings)
+        self.general_ui.restore_button.clicked.connect(self.handle_restore_factory_settings)
         # Connect signals for comboboxes and others
         for i in range(8):
             self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
@@ -416,11 +375,11 @@ class TemperatureWindow(QWidget):
             self.sensor_timer.stop()
             
             # Disconnect signals
-            self.module_name_label.editingFinished.disconnect(self.handle_module_name_change)
+            self.general_ui.module_name_label.editingFinished.disconnect(self.handle_module_name_change)
             self.address_line_edit.editingFinished.disconnect(self.handle_address_change)
-            self.brightness_combobox.currentIndexChanged.disconnect(self.handle_brightness_change)
+            self.general_ui.brightness_combobox.currentIndexChanged.disconnect(self.handle_brightness_change)
             self.slot_count_combobox.currentIndexChanged.disconnect(self.handle_slot_count_change)
-            self.restore_button.clicked.disconnect(self.handle_restore_factory_settings)
+            self.general_ui.restore_button.clicked.disconnect(self.handle_restore_factory_settings)
 
             # Disconnect signals for comboboxes and others
             for i in range(8):
@@ -448,7 +407,7 @@ class TemperatureWindow(QWidget):
             module_message = "MODNAME?\n"
             self.ser.write(module_message.encode())
             module_name = self.ser.read(1024).decode().strip()
-            self.module_name_label.setText(module_name)
+            self.general_ui.module_name_label.setText(module_name)
 
             # Send command to get general information
             message = "*IDN?\n"
@@ -459,8 +418,8 @@ class TemperatureWindow(QWidget):
             components = data.split(",")
 
             # Update labels with general information
-            self.serial_number_label.setText(components[2])
-            self.firmware_version_label.setText(components[3])
+            self.general_ui.serial_number_label.setText(components[2])
+            self.general_ui.firmware_version_label.setText(components[3])
 
         except Exception as e:
             print(f"Error: {e}")
@@ -473,7 +432,7 @@ class TemperatureWindow(QWidget):
             brightness_value = int(self.ser.read(1024).decode().strip())
 
             # Set the current index of the combo box based on the brightness value
-            self.brightness_combobox.setCurrentIndex(brightness_value)
+            self.general_ui.brightness_combobox.setCurrentIndex(brightness_value)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -684,7 +643,7 @@ class TemperatureWindow(QWidget):
 
 
     def handle_module_name_change(self):
-        new_name = self.module_name_label.text()
+        new_name = self.general_ui.module_name_label.text()
         message = f"MODNAME {new_name}\n"
         self.ser.write(message.encode())
 
@@ -694,7 +653,7 @@ class TemperatureWindow(QWidget):
         self.ser.write(message.encode())
 
     def handle_brightness_change(self, index):
-        selected_brightness = self.brightness_combobox.currentIndex()
+        selected_brightness = self.general_ui.brightness_combobox.currentIndex()
         message = f"BRIGT {selected_brightness}\n"
         self.ser.write(message.encode())
     
@@ -936,7 +895,7 @@ class TemperatureWindow(QWidget):
                 # Update Autorange combo box
                 autorange_combo_box.setCurrentIndex(int(autorange))
 
-                # Update Current Reversal combo box
+                # Update Current Reversal combo boxAML is a superset of JSON, so we can utilize JSON style sequences and maps in our constructs:
                 current_reversal_combo_box.setCurrentIndex(int(current_reversal))
 
                 # Update Display Units combo box
