@@ -68,6 +68,12 @@ class TemperatureWindow(QWidget):
         self.connection_label = QLabel("<b>Connection</b>")
         self.connection_label.setStyleSheet("font-size: 14pt;")
 
+        # Status label
+        self.connection_status_label = QLabel("<b>Status: </b>        Disconnected")
+
+        # Refresh devices button
+        self.refresh_button = QPushButton("Refresh devices")
+
         # Create HboxLayout for 2 buttons
         self.hbutton_layout = QHBoxLayout()
 
@@ -79,9 +85,6 @@ class TemperatureWindow(QWidget):
         self.hbutton_layout.addWidget(self.connect_button)
         self.hbutton_layout.addWidget(self.disconnect_button)
 
-        # Status label
-        self.connection_status_label = QLabel("<b>Status: </b>        Disconnected")
-        
         # Connection combobox
         self.connection_combobox = QComboBox()
         self.devices_list = []
@@ -95,6 +98,7 @@ class TemperatureWindow(QWidget):
         # Add widgets to connection_vlayout
         self.connection_vlayout.addWidget(self.connection_label)
         self.connection_vlayout.addWidget(self.connection_status_label)
+        self.connection_vlayout.addWidget(self.refresh_button)
         self.connection_vlayout.addLayout(self.hbutton_layout)
         self.connection_vlayout.addWidget(self.connection_combobox)
         
@@ -334,11 +338,16 @@ class TemperatureWindow(QWidget):
         self.layout.addLayout(self.left_layout)
         self.layout.addLayout(self.right_layout)
 
-        # Connect connect and disconnect buttons
+        # Connect connect, disconnect and refresh buttons
         self.connect_button.clicked.connect(self.handle_connect)
         self.disconnect_button.clicked.connect(self.handle_disconnect)
+        self.refresh_button.clicked.connect(self.populate_combobox)
             
     def populate_combobox(self):
+        # Clear stuff
+        self.connection_combobox.clear()
+        self.devices_list.clear()
+        
         # Scan USB ports for connected devices
         devices = serial.tools.list_ports.comports()
 
