@@ -92,6 +92,7 @@ class TemperatureWindow(QWidget):
         self.port = ''
         self.baudrate = 115200
         self.timeout = 1
+        self.ser = ''
         self.populate_combobox()
         
         
@@ -342,7 +343,16 @@ class TemperatureWindow(QWidget):
         self.connect_button.clicked.connect(self.handle_connect)
         self.disconnect_button.clicked.connect(self.handle_disconnect)
         self.refresh_button.clicked.connect(self.populate_combobox)
-            
+
+        # Create the timers
+        self.temp_timer = QTimer(self)
+        self.temp_timer.setInterval(10000)  # Update every 10 seconds
+        self.temp_timer.timeout.connect(self.read_temperature)
+        self.sensor_timer = QTimer(self)
+        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
+        self.sensor_timer.timeout.connect(self.read_sensor_units)
+
+
     def populate_combobox(self):
         # Clear stuff
         self.connection_combobox.clear()
@@ -372,18 +382,6 @@ class TemperatureWindow(QWidget):
         self.read_curves()
         self.read_sensor_units()
         self.read_temperature()
-        
-        # Start timer for updating temperature
-        self.temp_timer = QTimer(self)
-        self.temp_timer.setInterval(10000)  # Update every 10 seconds
-        self.temp_timer.timeout.connect(self.read_temperature)
-        self.temp_timer.start()
-
-        # Start timer for updating sensor units
-        self.sensor_timer = QTimer(self)
-        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(self.read_sensor_units)
-        self.sensor_timer.start()
 
         # Connect signals
         self.module_name_label.editingFinished.connect(self.handle_module_name_change)
@@ -405,6 +403,9 @@ class TemperatureWindow(QWidget):
             self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.curve_delete_buttons[i].clicked.connect(self.handle_delete_curve)
             self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
+
+        self.temp_timer.start()
+        self.sensor_timer.start()
 
         self.connection_status_label.setText("<b>Status: </b>        Connected")
     
@@ -554,9 +555,12 @@ class TemperatureWindow(QWidget):
                     else:
                         unit = unit + " Ω"
                     self.table_widget.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
+                    self.set_excitation(row)
                     self.calculate_power(row)
                 else:
                     self.table_widget.setItem(row, 2, QTableWidgetItem(""))
+                    self.table_widget.setItem(row, 3, QTableWidgetItem(""))
+                    self.table_widget.setItem(row, 4, QTableWidgetItem(""))
 
         except Exception as e:
             print(f"Error: {e}")
@@ -669,6 +673,15 @@ class TemperatureWindow(QWidget):
         except Exception as e:
             print(f"Error: {e}")
     
+    def set_excitation(self, row):
+        range_combo_box = self.sensor_layout.itemAtPosition(row+1, 5).widget()
+        excitation = range_combo_box.currentText()
+        # Extracting the part between parentheses
+        start_index = excitation.find('(') + 1
+        end_index = excitation.find(')', start_index)
+        parsed_excitation = excitation[start_index:end_index]
+        self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
+
 
     def handle_module_name_change(self):
         new_name = self.module_name_label.text()
@@ -964,13 +977,6 @@ class TemperatureWindow(QWidget):
                         range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
                         "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
                         "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
-                        range_combo_box.setCurrentIndex(int(range_val))
-                        excitation = range_combo_box.currentText()
-                        # Extracting the part between parentheses
-                        start_index = excitation.find('(') + 1
-                        end_index = excitation.find(')', start_index)
-                        parsed_excitation = excitation[start_index:end_index]
-                        self.table_widget.setItem(row, 3, QTableWidgetItem(parsed_excitation))
                         for col in range(2, 7):
                             widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
                             widget.setEnabled(True)
