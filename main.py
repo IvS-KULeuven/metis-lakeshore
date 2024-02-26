@@ -650,25 +650,11 @@ class TemperatureWindow(QWidget):
             power_unit = " W"
             multiplier = 1
             if power_value < 1:
-                # Convert the float to a string
-                num_str = str(power_value)
-
-                # Split the string into integer and decimal parts
-                integer_part, decimal_part = num_str.split('.')
-
-                # Count the number of zeros in the decimal part until the first non-zero digit
-                num_zeros = 0
-                for digit in decimal_part:
-                    if digit == '0':
-                        num_zeros += 1
-                    else:
-                        break
-
-                # Determine the appropriate multiplier based on the number of zeros
-                if num_zeros > 5:
+                # Determine the appropriate multiplier based on the power_value
+                if power_value < 0.000001:
                     multiplier = 1000000000
                     power_unit = " nW"
-                elif num_zeros > 2:
+                elif power_value < 0.001:
                     multiplier = 1000000
                     power_unit = " µW"
                 else:
