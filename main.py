@@ -1,78 +1,45 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem
 from PySide6.QtCore import QTimer
 import serial
 import serial.tools.list_ports
-from ui.general_ui import GeneralUI
-from ui.connection_ui import ConnectionUI
-from ui.profibus_ui import ProfibusUI
-from ui.curve_ui import CurveUI
-from ui.sensor_ui import SensorUI
+from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 
-class TemperatureWindow(QWidget):
+class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
+        # Create QHBoxlayout for the application, it will be split into a left and right part
         self.layout = QHBoxLayout(self)
 
-        # Left layout for lakeshore information
-        self.left_layout = QVBoxLayout()
-        
-        # Create QHBoxlayout for general and connection part
-        self.left_hlayout = QHBoxLayout()
+        # Create instances of imported UI's
+        self.left_ui = LeftUI()
+        self.temperature_ui = TemperatureUI()
 
-        # Create an instance of GeneralUI
-        self.general_ui = GeneralUI()
+        # Add left and right layouts to main layoutd
+        self.layout.addLayout(self.left_ui.layout)
+        self.layout.addLayout(self.temperature_ui.vlayout)
 
-        # Create an instance of ConnectionUI
-        self.connection_ui = ConnectionUI()
+        # Access attributes from instances of LeftUI
+        self.general_ui = self.left_ui.general_ui
+        self.connection_ui = self.left_ui.connection_ui
+        self.profibus_ui = self.left_ui.profibus_ui
+        self.curve_ui = self.left_ui.curve_ui
+        self.sensor_ui = self.left_ui.sensor_ui
 
-        self.devices_list = []
-        # Set serial port settings and read data
+        # Create variables to store serial information
         self.port = ''
         self.baudrate = 115200
         self.timeout = 1
         self.ser = ''
-        self.populate_combobox()
-        
-        # Add general_vlayout and connection_vlayout to left_hlayout
-        self.left_hlayout.addLayout(self.general_ui.vlayout)
-        self.left_hlayout.addLayout(self.connection_ui.vlayout)
-        
-        # Create QHBoxlayout for Profibus and Curve part
-        self.left_h2layout = QHBoxLayout()
-
-        # Create an instance of GeneralUI
-        self.profibus_ui = ProfibusUI()
-
-        # Create an instance of GeneralUI
-        self.curve_ui = CurveUI()
-
-        # Create an instance of GeneralUI
-        self.sensor_ui = SensorUI()
-
-        # Add profibus and curve layouts to left_h2layout
-        self.left_h2layout.addLayout(self.profibus_ui.vlayout)
-        self.left_h2layout.addLayout(self.curve_ui.vlayout)
-
-        # Add sections to general layout
-        self.left_layout.addLayout(self.left_hlayout)
-        self.left_layout.addLayout(self.left_h2layout)
-        self.left_layout.addWidget(self.sensor_ui.title_label)
-        self.left_layout.addWidget(self.sensor_ui.frame)
-
-        # Create an instance of TemperatureUI
-        self.temperature_ui = TemperatureUI()
-
-
-        # Add left and right layouts to main layout
-        self.layout.addLayout(self.left_layout)
-        self.layout.addLayout(self.temperature_ui.vlayout)
 
         # Connect connect, disconnect and refresh buttons
         self.connection_ui.connect_button.clicked.connect(self.handle_connect)
         self.connection_ui.disconnect_button.clicked.connect(self.handle_disconnect)
-        self.connection_ui.refresh_button.clicked.connect(self.populate_combobox)
+        self.connection_ui.refresh_button.clicked.connect(self.find_connected_devices)
+
+        # Call the function to search for connected devices
+        self.find_connected_devices()
 
         # Create the timers
         self.temp_timer = QTimer(self)
@@ -83,23 +50,31 @@ class TemperatureWindow(QWidget):
         self.sensor_timer.timeout.connect(self.read_sensor_units)
 
 
-    def populate_combobox(self):
+    def find_connected_devices(self):
         # Clear stuff
         self.connection_ui.connection_combobox.clear()
-        self.devices_list.clear()
+        self.connection_ui.devices_list.clear()
         
         # Scan USB ports for connected devices
         devices = serial.tools.list_ports.comports()
 
-        # Add devices with baudrate 115200 to the combobox
+        # Add devices to the combobox
         for device in devices:
             with serial.Serial(device.device) as ser:
-                self.connection_ui.connection_combobox.addItem(device.description)
-                self.devices_list.append(device)
+                device_str = self.remove_duplicate_parts(str(device))
+                self.connection_ui.connection_combobox.addItem(device_str)
+                self.connection_ui.devices_list.append(device)
+
+    def remove_duplicate_parts(self, input_string):
+        parts = input_string.split(" - ")
+        if len(parts) == 3 and parts[1] == parts[2]:
+            return parts[0] + " - " + parts[1]
+        else:
+            return input_string
                 
     def handle_connect(self):
         i = self.connection_ui.connection_combobox.currentIndex()
-        device = self.devices_list[i]
+        device = self.connection_ui.devices_list[i]
         self.port = device.device
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
         self.read_general_information()
@@ -855,6 +830,6 @@ class TemperatureWindow(QWidget):
 
 if __name__ == "__main__":
     app = QApplication([])
-    window = TemperatureWindow()
+    window = MainWindow()
     window.show()
     app.exec()

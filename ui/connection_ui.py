@@ -30,6 +30,9 @@ class ConnectionUI(QWidget):
         # Connection combobox
         self.connection_combobox = QComboBox()
 
+        # Create list to store devices in
+        self.devices_list = []
+
         # Add widgets to connection_vlayout
         self.vlayout.addWidget(self.connection_label)
         self.vlayout.addWidget(self.status_label)
