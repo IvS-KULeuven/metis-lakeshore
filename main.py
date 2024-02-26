@@ -6,6 +6,7 @@ from ui.general_ui import GeneralUI
 from ui.connection_ui import ConnectionUI
 from ui.profibus_ui import ProfibusUI
 from ui.curve_ui import CurveUI
+from ui.sensor_ui import SensorUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -49,97 +50,18 @@ class TemperatureWindow(QWidget):
         # Create an instance of GeneralUI
         self.curve_ui = CurveUI()
 
+        # Create an instance of GeneralUI
+        self.sensor_ui = SensorUI()
+
         # Add profibus and curve layouts to left_h2layout
         self.left_h2layout.addLayout(self.profibus_ui.vlayout)
         self.left_h2layout.addLayout(self.curve_ui.vlayout)
 
-        # Sensor setup section
-        self.sensor_label = QLabel("<b>Sensor setup</b>")
-        self.sensor_label.setStyleSheet("font-size: 14pt;")
-
-        # New QFrame for sensor section
-        self.sensor_frame = QFrame()
-        self.sensor_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
-        self.sensor_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        # Grid layout for sensor section
-        self.sensor_layout = QGridLayout()
-        self.sensor_frame.setLayout(self.sensor_layout)
-
-        # Labels for sensor section
-        sensor_labels = ["Power", "Name", "Type", "Current Reversal", "Autorange", "Range", "Display Units"]
-
-        # Add labels to sensor grid layout
-        for col, label in enumerate(sensor_labels):
-            self.sensor_layout.addWidget(QLabel(f"<b>{label}</b>"), 0, col)
-
-        # Add QComboBox for Power (On/Off)
-        power_options = ["Off", "On"]
-        self.power_comboboxes = []
-        for row in range(1, 9):
-            combo_box = QComboBox()
-            combo_box.addItems(power_options)
-            self.sensor_layout.addWidget(combo_box, row, 0)
-            self.power_comboboxes.append(combo_box)
-
-        # Add QLineEdit for Name
-        self.line_edits = []
-        for row in range(1, 9):
-            line_edit = QLineEdit()
-            self.sensor_layout.addWidget(line_edit, row, 1)
-            self.line_edits.append(line_edit)
-
-        # Add QComboBox for Type
-        sensor_types = ["Diode", "Platinum RTD", "NTC RTD"]
-        self.type_comboboxes = []  # Store the combo boxes in a list to access them later if needed
-        for row in range(1, 9):
-            combo_box = QComboBox()
-            combo_box.addItems(sensor_types)
-            self.sensor_layout.addWidget(combo_box, row, 2)
-            self.type_comboboxes.append(combo_box)
-
-        # Add QComboBox for Current Reversal
-        on_off_values = ["Off", "On"]
-        self.current_reversal_comboboxes = []
-        for row in range(1, 9):
-                combo_box = QComboBox()
-                combo_box.addItems(on_off_values)
-                self.current_reversal_comboboxes.append(combo_box)
-                self.sensor_layout.addWidget(combo_box, row, 3)
-
-        # Add QComboBox for Autorange
-        on_off_values = ["Off", "On"]
-        self.autorange_comboboxes = []
-        for row in range(1, 9):
-                combo_box = QComboBox()
-                combo_box.addItems(on_off_values)
-                self.autorange_comboboxes.append(combo_box)
-                self.sensor_layout.addWidget(combo_box, row, 4)
-
-        # Add comboboxes for Range
-        range_values = ["7.5 V (10 µA)", "1 kΩ (1 mA)", "10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)", "300 Ω (30 µA)",
-                        "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)", "30 kΩ (300 nA)", "100 kΩ (100 nA)"]
-        self.range_comboboxes = []
-        for row in range(1, 9):
-            combo_box = QComboBox()
-            combo_box.addItems(range_values)
-            self.range_comboboxes.append(combo_box)
-            self.sensor_layout.addWidget(combo_box, row, 5)
-            
-        # Add comboboxes for Display Units
-        display_units = ["Kelvin", "Celsius", "Sensor", "Fahrenheit"]
-        self.display_units_comboboxes = []
-        for row in range(1, 9):
-            combo_box = QComboBox()
-            combo_box.addItems(display_units)
-            self.display_units_comboboxes.append(combo_box)
-            self.sensor_layout.addWidget(combo_box, row, 6)
-
         # Add sections to general layout
         self.left_layout.addLayout(self.left_hlayout)
         self.left_layout.addLayout(self.left_h2layout)
-        self.left_layout.addWidget(self.sensor_label)
-        self.left_layout.addWidget(self.sensor_frame)
+        self.left_layout.addWidget(self.sensor_ui.title_label)
+        self.left_layout.addWidget(self.sensor_ui.frame)
 
         # Stretch the left_h2layout within the left_layout
         self.left_layout.setStretch(2, 1)
@@ -226,14 +148,14 @@ class TemperatureWindow(QWidget):
         for i in range(8):
             self.profibus_ui.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
             self.profibus_ui.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
-            self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
-            self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
-            self.line_edits[i].editingFinished.connect(self.handle_name_change)
+            self.sensor_ui.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
+            self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
+            self.sensor_ui.name_line_edits[i].editingFinished.connect(self.handle_name_change)
             self.curve_ui.name_labels[i].editingFinished.connect(self.handle_name_change)
-            self.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.sensor_ui.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.curve_ui.delete_buttons[i].clicked.connect(self.handle_delete_curve)
             self.curve_ui.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
 
@@ -259,14 +181,14 @@ class TemperatureWindow(QWidget):
             for i in range(8):
                 self.profibus_ui.channel_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
                 self.profibus_ui.units_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
-                self.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
-                self.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
-                self.line_edits[i].editingFinished.disconnect(self.handle_name_change)
+                self.sensor_ui.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
+                self.sensor_ui.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
+                self.sensor_ui.name_line_edits[i].editingFinished.disconnect(self.handle_name_change)
                 self.curve_ui.name_labels[i].editingFinished.disconnect(self.handle_name_change)
-                self.current_reversal_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.autorange_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.range_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.display_units_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.sensor_ui.range_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
                 self.curve_ui.delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
                 self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
 
@@ -319,7 +241,7 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 name = self.ser.read(1024).decode().strip()
                 self.table_widget.setItem(row, 0, QTableWidgetItem(name))
-                self.line_edits[row].setText(name)
+                self.sensor_ui.name_line_edits[row].setText(name)
                 self.curve_ui.name_labels[row].setText(name)
         except Exception as e:
             print(f"Error: {e}")
@@ -336,7 +258,7 @@ class TemperatureWindow(QWidget):
 
             # Update table with formatted temperatures
             for row, temp in enumerate(temperatures):
-                if(self.power_comboboxes[row].currentIndex() == 1):  #if power is on
+                if(self.sensor_ui.power_comboboxes[row].currentIndex() == 1):  #if power is on
                     formatted_temp = temp.lstrip('+')  # Remove leading '+'
                     if  '.' in formatted_temp:
                         formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
@@ -377,13 +299,13 @@ class TemperatureWindow(QWidget):
 
             # Update table with sensor units
             for row, unit in enumerate(sensor_units):
-                if(self.power_comboboxes[row].currentIndex() == 1): # If power is on
+                if(self.sensor_ui.power_comboboxes[row].currentIndex() == 1): # If power is on
                     unit = unit.lstrip('+')  # Remove leading '+'
                     if '.' in unit:
                         unit = unit.lstrip('0')  # Remove leading '0's
                     if len(unit) > 0 and unit[0] == ".":
                         unit = '0' + unit
-                    if(self.type_comboboxes[row].currentIndex() == 0):
+                    if(self.sensor_ui.type_comboboxes[row].currentIndex() == 0):
                         unit = unit + " V"
                     else:
                         unit = unit + " Ω"
@@ -507,7 +429,7 @@ class TemperatureWindow(QWidget):
             print(f"Error: {e}")
     
     def set_excitation(self, row):
-        range_combo_box = self.sensor_layout.itemAtPosition(row+1, 5).widget()
+        range_combo_box = self.sensor_ui.layout.itemAtPosition(row+1, 5).widget()
         excitation = range_combo_box.currentText()
         # Extracting the part between parentheses
         start_index = excitation.find('(') + 1
@@ -556,7 +478,7 @@ class TemperatureWindow(QWidget):
         row = 0
         i =0
         found = False
-        for line_edit in self.line_edits:
+        for line_edit in self.sensor_ui.name_line_edits:
             if (line_edit == sender):
                 row = i
                 found = True
@@ -575,7 +497,7 @@ class TemperatureWindow(QWidget):
         self.ser.write(message.encode())
 
         self.table_widget.setItem(row, 0, QTableWidgetItem(new_name))
-        self.line_edits[row].setText(new_name)
+        self.sensor_ui.name_line_edits[row].setText(new_name)
         self.curve_ui.name_labels[row].setText(new_name)
     
     def handle_restore_factory_settings(self):
@@ -600,15 +522,15 @@ class TemperatureWindow(QWidget):
         sender_combo_box = self.sender()
 
         # Get the row number of the combo box in the layout
-        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender_combo_box))[0]
+        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
 
         # Get the values
-        power = self.sensor_layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
+        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
@@ -618,16 +540,16 @@ class TemperatureWindow(QWidget):
         sender_combo_box = self.sender()
 
         # Get the row number of the combo box in the layout
-        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender_combo_box))[0]
+        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
 
         # Get the selected type
         selected_type = sender_combo_box.currentText()
 
         # Get the relevant combo boxes for the current row
-        current_reversal_combo_box = self.sensor_layout.itemAtPosition(row, 3).widget()
-        autorange_combo_box = self.sensor_layout.itemAtPosition(row, 4).widget()
-        range_combo_box = self.sensor_layout.itemAtPosition(row, 5).widget()
-        units_combo_box = self.sensor_layout.itemAtPosition(row, 6).widget()
+        current_reversal_combo_box = self.sensor_ui.layout.itemAtPosition(row, 3).widget()
+        autorange_combo_box = self.sensor_ui.layout.itemAtPosition(row, 4).widget()
+        range_combo_box = self.sensor_ui.layout.itemAtPosition(row, 5).widget()
+        units_combo_box = self.sensor_ui.layout.itemAtPosition(row, 6).widget()
         units_combo_box.setEnabled(True)
         units_combo_box.setStyleSheet("")
 
@@ -666,12 +588,12 @@ class TemperatureWindow(QWidget):
                                     "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
         
         # Get the values
-        power = self.sensor_layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
+        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
@@ -681,21 +603,21 @@ class TemperatureWindow(QWidget):
         sender_combo_box = self.sender()
 
         # Get the row number of the combo box in the layout
-        row = self.sensor_layout.getItemPosition(self.sensor_layout.indexOf(sender_combo_box))[0]
+        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
         
         # Get the selected power state
         selected_power_state = sender_combo_box.currentText()
 
         # Get the values
-        power = self.sensor_layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_layout.itemAtPosition(row, 6).widget().currentIndex() +1
+        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
 
         #range combobox
-        range_combo_box = self.sensor_layout.itemAtPosition(row, 5).widget()
+        range_combo_box = self.sensor_ui.layout.itemAtPosition(row, 5).widget()
 
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
@@ -705,14 +627,14 @@ class TemperatureWindow(QWidget):
             # Diode
             if type == 1:
                 for col in range(2, 7):
-                    widget = self.sensor_layout.itemAtPosition(row, col).widget()
+                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
                     if col in [2, 6]:  # Type and Display Units columns
                         widget.setEnabled(True)
                         widget.setStyleSheet("")
             # Platinum RTD
             elif type == 2:
                 for col in range(2, 7):
-                    widget = self.sensor_layout.itemAtPosition(row, col).widget()
+                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
                     if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
                         widget.setEnabled(True)
                         widget.setStyleSheet("")
@@ -724,18 +646,18 @@ class TemperatureWindow(QWidget):
                 "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
                 range_combo_box.setCurrentIndex(int(selected_range))
                 for col in range(2, 7):
-                    widget = self.sensor_layout.itemAtPosition(row, col).widget()
+                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
                     widget.setEnabled(True)
                     widget.setStyleSheet("")
 
             else:
                 # Only enable type column
-                widget = self.sensor_layout.itemAtPosition(row, 2).widget()
+                widget = self.sensor_ui.layout.itemAtPosition(row, 2).widget()
                 widget.setEnabled(True)
                 widget.setStyleSheet("")
         else:
             for col in range(2, 7):
-                widget = self.sensor_layout.itemAtPosition(row, col).widget()
+                widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
                 widget.setEnabled(False)
                 widget.setStyleSheet("QComboBox { color: darkgray; }")
 
@@ -753,12 +675,12 @@ class TemperatureWindow(QWidget):
                 sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
 
                 # # Update the QComboBoxes based on the parsed values
-                power_combo_box =self.sensor_layout.itemAtPosition(row + 1, 0).widget()
-                type_combo_box = self.sensor_layout.itemAtPosition(row + 1, 2).widget()
-                autorange_combo_box = self.sensor_layout.itemAtPosition(row + 1, 4).widget()
-                range_combo_box = self.sensor_layout.itemAtPosition(row + 1, 5).widget()
-                current_reversal_combo_box = self.sensor_layout.itemAtPosition(row + 1, 3).widget()
-                display_units_combo_box = self.sensor_layout.itemAtPosition(row + 1, 6).widget()
+                power_combo_box =self.sensor_ui.layout.itemAtPosition(row + 1, 0).widget()
+                type_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 2).widget()
+                autorange_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 4).widget()
+                range_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 5).widget()
+                current_reversal_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 3).widget()
+                display_units_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 6).widget()
 
                 # Update Power combo box
                 power_combo_box.setCurrentIndex(int(enabled))
@@ -783,7 +705,7 @@ class TemperatureWindow(QWidget):
                         range_combo_box.addItems(["7.5 V (10 µA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
                         for col in range(2, 7):
-                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                             if col in [2, 6]:  # Type and Display Units columns
                                 widget.setEnabled(True)
                                 widget.setStyleSheet("")
@@ -797,7 +719,7 @@ class TemperatureWindow(QWidget):
                         range_combo_box.addItems(["1 kΩ (1 mA)"])
                         range_combo_box.setCurrentIndex(int(range_val))
                         for col in range(2, 7):
-                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                             if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
                                 widget.setEnabled(True)
                                 widget.setStyleSheet("")
@@ -811,7 +733,7 @@ class TemperatureWindow(QWidget):
                         "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
                         "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
                         for col in range(2, 7):
-                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                             widget.setEnabled(True)
                             widget.setStyleSheet("")
 
@@ -821,10 +743,10 @@ class TemperatureWindow(QWidget):
                         range_combo_box.setCurrentIndex(int(range_val))
                         # Only enable type column
                         for col in range(3, 7):
-                            widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                             widget.setEnabled(False)
                             widget.setStyleSheet("QComboBox { color: darkgray; }")
-                        widget = self.sensor_layout.itemAtPosition(input_number, 2).widget()
+                        widget = self.sensor_ui.layout.itemAtPosition(input_number, 2).widget()
                         widget.setEnabled(True)
                         widget.setStyleSheet("")
                 else:
@@ -832,7 +754,7 @@ class TemperatureWindow(QWidget):
                     range_combo_box.addItems([""])
                     range_combo_box.setCurrentIndex(int(range_val))
                     for col in range(2, 7):
-                        widget = self.sensor_layout.itemAtPosition(input_number, col).widget()
+                        widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                         widget.setEnabled(False)
                         widget.setStyleSheet("QComboBox { color: darkgray; }")
 
@@ -849,11 +771,11 @@ class TemperatureWindow(QWidget):
                     input = i
                     break
                 i +=1
-            sensor_type_box = self.sensor_layout.itemAtPosition(input, 2).widget()
-            sensor_current_box = self.sensor_layout.itemAtPosition(input, 3).widget()
-            sensor_autorange_box = self.sensor_layout.itemAtPosition(input, 4).widget()
-            sensor_range_box = self.sensor_layout.itemAtPosition(input, 5).widget()
-            sensor_unit_box = self.sensor_layout.itemAtPosition(input, 6).widget()
+            sensor_type_box = self.sensor_ui.layout.itemAtPosition(input, 2).widget()
+            sensor_current_box = self.sensor_ui.layout.itemAtPosition(input, 3).widget()
+            sensor_autorange_box = self.sensor_ui.layout.itemAtPosition(input, 4).widget()
+            sensor_range_box = self.sensor_ui.layout.itemAtPosition(input, 5).widget()
+            sensor_unit_box = self.sensor_ui.layout.itemAtPosition(input, 6).widget()
             file = ""
             name = ""
             serial = ""
