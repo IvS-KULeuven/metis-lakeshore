@@ -67,6 +67,20 @@ class TemperatureWindow(QWidget):
         # Connection label 
         self.connection_label = QLabel("<b>Connection</b>")
         self.connection_label.setStyleSheet("font-size: 14pt;")
+
+        # Create HboxLayout for 2 buttons
+        self.hbutton_layout = QHBoxLayout()
+
+        # Create buttons
+        self.connect_button = QPushButton("Connect")
+        self.disconnect_button = QPushButton("Disconnect")
+        
+        # Add buttons to hbutton_layout
+        self.hbutton_layout.addWidget(self.connect_button)
+        self.hbutton_layout.addWidget(self.disconnect_button)
+
+        # Status label
+        self.connection_status_label = QLabel("<b>Status: </b>        Disconnected")
         
         # Connection combobox
         self.connection_combobox = QComboBox()
@@ -77,19 +91,10 @@ class TemperatureWindow(QWidget):
         self.timeout = 1
         self.populate_combobox()
         
-        # Create HboxLayout for 2 buttons
-        self.hbutton_layout = QHBoxLayout()
-        
-        # Create buttons
-        self.connect_button = QPushButton("Connect")
-        self.disconnect_button = QPushButton("Disconnect")
-        
-        # Add buttons to hbutton_layout
-        self.hbutton_layout.addWidget(self.connect_button)
-        self.hbutton_layout.addWidget(self.disconnect_button)
         
         # Add widgets to connection_vlayout
         self.connection_vlayout.addWidget(self.connection_label)
+        self.connection_vlayout.addWidget(self.connection_status_label)
         self.connection_vlayout.addLayout(self.hbutton_layout)
         self.connection_vlayout.addWidget(self.connection_combobox)
         
@@ -294,7 +299,6 @@ class TemperatureWindow(QWidget):
 
         # Add sections to general layout
         self.left_layout.addLayout(self.left_hlayout)
-        # self.left_layout.addWidget(self.general_section_frame)
         self.left_layout.addLayout(self.left_h2layout)
         self.left_layout.addWidget(self.sensor_label)
         self.left_layout.addWidget(self.sensor_frame)
@@ -330,27 +334,9 @@ class TemperatureWindow(QWidget):
         self.layout.addLayout(self.left_layout)
         self.layout.addLayout(self.right_layout)
 
-        # Connect signals
-        self.module_name_label.editingFinished.connect(self.handle_module_name_change)
-        self.address_line_edit.editingFinished.connect(self.handle_address_change)
-        self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
-        self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
-        self.restore_button.clicked.connect(self.restore_factory_settings)
+        # Connect connect and disconnect buttons
         self.connect_button.clicked.connect(self.handle_connect)
-        # Connect signals for comboboxes and others
-        for i in range(8):
-            self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
-            self.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
-            self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
-            self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
-            self.line_edits[i].editingFinished.connect(self.handle_name_change)
-            self.curve_name_labels[i].editingFinished.connect(self.handle_name_change)
-            self.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.curve_delete_buttons[i].clicked.connect(self.delete_curve)
-            self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
+        self.disconnect_button.clicked.connect(self.handle_disconnect)
             
     def populate_combobox(self):
         # Scan USB ports for connected devices
@@ -359,7 +345,6 @@ class TemperatureWindow(QWidget):
         # Add devices with baudrate 115200 to the combobox
         for device in devices:
             with serial.Serial(device.device) as ser:
-                # if ser.baudrate == 115200:
                 self.connection_combobox.addItem(device.description)
                 self.devices_list.append(device)
                 
@@ -390,6 +375,61 @@ class TemperatureWindow(QWidget):
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
         self.sensor_timer.timeout.connect(self.read_sensor_units)
         self.sensor_timer.start()
+
+        # Connect signals
+        self.module_name_label.editingFinished.connect(self.handle_module_name_change)
+        self.address_line_edit.editingFinished.connect(self.handle_address_change)
+        self.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
+        self.slot_count_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
+        self.restore_button.clicked.connect(self.handle_restore_factory_settings)
+        # Connect signals for comboboxes and others
+        for i in range(8):
+            self.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
+            self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
+            self.line_edits[i].editingFinished.connect(self.handle_name_change)
+            self.curve_name_labels[i].editingFinished.connect(self.handle_name_change)
+            self.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            self.curve_delete_buttons[i].clicked.connect(self.handle_delete_curve)
+            self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
+
+        self.connection_status_label.setText("<b>Status: </b>        Connected")
+    
+    def handle_disconnect(self):
+        try:
+            self.ser.close()
+            self.temp_timer.stop()
+            self.sensor_timer.stop()
+            
+            # Disconnect signals
+            self.module_name_label.editingFinished.disconnect(self.handle_module_name_change)
+            self.address_line_edit.editingFinished.disconnect(self.handle_address_change)
+            self.brightness_combobox.currentIndexChanged.disconnect(self.handle_brightness_change)
+            self.slot_count_combobox.currentIndexChanged.disconnect(self.handle_slot_count_change)
+            self.restore_button.clicked.disconnect(self.handle_restore_factory_settings)
+
+            # Disconnect signals for comboboxes and others
+            for i in range(8):
+                self.channel_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
+                self.units_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
+                self.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
+                self.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
+                self.line_edits[i].editingFinished.disconnect(self.handle_name_change)
+                self.curve_name_labels[i].editingFinished.disconnect(self.handle_name_change)
+                self.current_reversal_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.autorange_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.range_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.display_units_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
+                self.curve_delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
+                self.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
+
+            self.connection_status_label.setText("<b>Status: </b>        Disconnected")
+        except Exception as e:
+            print(f"Error: {e}")
         
         
     def read_general_information(self):
@@ -412,7 +452,7 @@ class TemperatureWindow(QWidget):
             self.serial_number_label.setText(components[2])
             self.firmware_version_label.setText(components[3])
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_brightness(self):
@@ -425,7 +465,7 @@ class TemperatureWindow(QWidget):
             # Set the current index of the combo box based on the brightness value
             self.brightness_combobox.setCurrentIndex(brightness_value)
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_input_names(self):
@@ -438,7 +478,7 @@ class TemperatureWindow(QWidget):
                 self.table_widget.setItem(row, 0, QTableWidgetItem(name))
                 self.line_edits[row].setText(name)
                 self.curve_name_labels[row].setText(name)
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_temperature(self):
@@ -479,7 +519,7 @@ class TemperatureWindow(QWidget):
                 else:
                     self.table_widget.setItem(row, 1, QTableWidgetItem(""))
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_sensor_units(self):
@@ -509,7 +549,7 @@ class TemperatureWindow(QWidget):
                 else:
                     self.table_widget.setItem(row, 2, QTableWidgetItem(""))
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_curves(self):
@@ -520,9 +560,6 @@ class TemperatureWindow(QWidget):
                 self.ser.write(message.encode())
                 response = self.ser.read(1024).decode().strip().split(",")[:5]
                 name = response[0].strip()
-                value = response[2]
-                excitation = '10µA' if value == '2' else '1mA' if value == '3' else ''
-                # self.table_widget.setItem(row, 3, QTableWidgetItem(excitation))
                 if (name == "LSCI_DT-600"):
                     self.curve_comboboxes[row].setCurrentIndex(0)
                 elif (name == "LSCI_DT-400"):
@@ -537,7 +574,7 @@ class TemperatureWindow(QWidget):
                     self.curve_comboboxes[row].setCurrentIndex(5)
                 else:
                     self.curve_comboboxes[row].setCurrentIndex(-1)
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
     
     def read_address(self):
@@ -547,7 +584,7 @@ class TemperatureWindow(QWidget):
             address = self.ser.read(1024).decode().strip()
             self.address_line_edit.setText(address)
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def read_slot_count(self):
@@ -557,7 +594,7 @@ class TemperatureWindow(QWidget):
             value = int(self.ser.read(1024).decode().strip())
             self.slot_count_combobox.setCurrentIndex(value)
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
     
     def read_slots(self):
@@ -570,7 +607,7 @@ class TemperatureWindow(QWidget):
                 self.channel_comboboxes[row].setCurrentIndex(int(data[0])-1)
                 self.units_comboboxes[row].setCurrentIndex(int(data[1])-1)
 
-        except serial.SerialException as e:
+        except Exception as e:
             print(f"Error: {e}")
 
     def calculate_power(self, row):
@@ -638,8 +675,6 @@ class TemperatureWindow(QWidget):
             print(f"Error: {e}")
     
 
-
-
     def handle_module_name_change(self):
         new_name = self.module_name_label.text()
         message = f"MODNAME {new_name}\n"
@@ -702,11 +737,11 @@ class TemperatureWindow(QWidget):
         self.line_edits[row].setText(new_name)
         self.curve_name_labels[row].setText(new_name)
     
-    def restore_factory_settings(self):
+    def handle_restore_factory_settings(self):
         message = f"DFLT 99\n"
         self.ser.write(message.encode())
     
-    def delete_curve(self):
+    def handle_delete_curve(self):
         sender = self.sender()
         i = 1
         for button in self.curve_delete_buttons:
@@ -967,7 +1002,7 @@ class TemperatureWindow(QWidget):
                         widget.setEnabled(False)
                         widget.setStyleSheet("QComboBox { color: darkgray; }")
 
-        except serial.SerialException as e:
+        except Exception as e:
                 print(f"Error: {e}")
 
     def handle_curve_change(self, index):
