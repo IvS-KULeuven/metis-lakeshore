@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QLabel, QGridLayout, QLineEdit, QFrame, QComboBox, QPushButton, QHeaderView, QLayout
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer
 import serial
 import serial.tools.list_ports
 from general_ui import GeneralUI
+from connection_ui import ConnectionUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -18,34 +19,10 @@ class TemperatureWindow(QWidget):
 
         # Create an instance of GeneralUI
         self.general_ui = GeneralUI()
-        
-        # CONNECTION
-        # Create VBoxlayout for connection part
-        self.connection_vlayout = QVBoxLayout()
-        
-        # Connection label 
-        self.connection_label = QLabel("<b>Connection</b>")
-        self.connection_label.setStyleSheet("font-size: 14pt;")
 
-        # Status label
-        self.connection_status_label = QLabel("<b>Status: </b>        Disconnected")
+        # Create an instance of ConnectionUI
+        self.connection_ui = ConnectionUI()
 
-        # Refresh devices button
-        self.refresh_button = QPushButton("Refresh devices")
-
-        # Create HboxLayout for 2 buttons
-        self.hbutton_layout = QHBoxLayout()
-
-        # Create buttons
-        self.connect_button = QPushButton("Connect")
-        self.disconnect_button = QPushButton("Disconnect")
-        
-        # Add buttons to hbutton_layout
-        self.hbutton_layout.addWidget(self.connect_button)
-        self.hbutton_layout.addWidget(self.disconnect_button)
-
-        # Connection combobox
-        self.connection_combobox = QComboBox()
         self.devices_list = []
         # Set serial port settings and read data
         self.port = ''
@@ -54,17 +31,9 @@ class TemperatureWindow(QWidget):
         self.ser = ''
         self.populate_combobox()
         
-        
-        # Add widgets to connection_vlayout
-        self.connection_vlayout.addWidget(self.connection_label)
-        self.connection_vlayout.addWidget(self.connection_status_label)
-        self.connection_vlayout.addWidget(self.refresh_button)
-        self.connection_vlayout.addLayout(self.hbutton_layout)
-        self.connection_vlayout.addWidget(self.connection_combobox)
-        
         # Add general_vlayout and connection_vlayout to left_hlayout
         self.left_hlayout.addLayout(self.general_ui.vlayout)
-        self.left_hlayout.addLayout(self.connection_vlayout)
+        self.left_hlayout.addLayout(self.connection_ui.vlayout)
         
         # Create QHBoxlayout for Profibus and Curve part
         self.left_h2layout = QHBoxLayout()
@@ -299,9 +268,9 @@ class TemperatureWindow(QWidget):
         self.layout.addLayout(self.right_layout)
 
         # Connect connect, disconnect and refresh buttons
-        self.connect_button.clicked.connect(self.handle_connect)
-        self.disconnect_button.clicked.connect(self.handle_disconnect)
-        self.refresh_button.clicked.connect(self.populate_combobox)
+        self.connection_ui.connect_button.clicked.connect(self.handle_connect)
+        self.connection_ui.disconnect_button.clicked.connect(self.handle_disconnect)
+        self.connection_ui.refresh_button.clicked.connect(self.populate_combobox)
 
         # Create the timers
         self.temp_timer = QTimer(self)
@@ -314,7 +283,7 @@ class TemperatureWindow(QWidget):
 
     def populate_combobox(self):
         # Clear stuff
-        self.connection_combobox.clear()
+        self.connection_ui.connection_combobox.clear()
         self.devices_list.clear()
         
         # Scan USB ports for connected devices
@@ -323,11 +292,11 @@ class TemperatureWindow(QWidget):
         # Add devices with baudrate 115200 to the combobox
         for device in devices:
             with serial.Serial(device.device) as ser:
-                self.connection_combobox.addItem(device.description)
+                self.connection_ui.connection_combobox.addItem(device.description)
                 self.devices_list.append(device)
                 
     def handle_connect(self):
-        i = self.connection_combobox.currentIndex()
+        i = self.connection_ui.connection_combobox.currentIndex()
         device = self.devices_list[i]
         self.port = device.device
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
@@ -366,7 +335,7 @@ class TemperatureWindow(QWidget):
         self.temp_timer.start()
         self.sensor_timer.start()
 
-        self.connection_status_label.setText("<b>Status: </b>        Connected")
+        self.connection_ui.status_label.setText("<b>Status: </b>        Connected")
     
     def handle_disconnect(self):
         try:
@@ -396,7 +365,7 @@ class TemperatureWindow(QWidget):
                 self.curve_delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
                 self.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
 
-            self.connection_status_label.setText("<b>Status: </b>        Disconnected")
+            self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
         except Exception as e:
             print(f"Error: {e}")
         
