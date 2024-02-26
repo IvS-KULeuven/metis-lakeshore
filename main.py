@@ -5,6 +5,7 @@ import serial.tools.list_ports
 from ui.general_ui import GeneralUI
 from ui.connection_ui import ConnectionUI
 from ui.profibus_ui import ProfibusUI
+from ui.curve_ui import CurveUI
 
 class TemperatureWindow(QWidget):
     def __init__(self):
@@ -45,58 +46,12 @@ class TemperatureWindow(QWidget):
         # Create an instance of GeneralUI
         self.profibus_ui = ProfibusUI()
 
-
-        # Curve setup section 
-        # Vbox for Curve part
-        self.curve_vlayout = QVBoxLayout()
-
-        # Label for curve setup
-        self.curve_label = QLabel("<b>Curve setup</b>")
-        self.curve_label.setStyleSheet("font-size: 14pt;")
-
-        # New QFrame for curve section
-        self.curve_frame = QFrame()
-        self.curve_frame.setFrameStyle(QFrame.Panel | QFrame.Plain)
-        self.curve_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        # Grid layout for curve section
-        self.curve_layout = QGridLayout()
-        self.curve_frame.setLayout(self.curve_layout)
-
-        # Add labels for curve section
-        self.curve_layout.addWidget(QLabel("<b>Name</b>"), 0, 0)
-        self.curve_layout.addWidget(QLabel("<b>Curve</b>"), 0, 1)
-
-        # Add QLine_edit for Name
-        self.curve_name_labels = []
-        for row in range(1, 9):
-            label = QLineEdit("")
-            self.curve_layout.addWidget(label, row, 0)
-            self.curve_name_labels.append(label)
-
-        # Add rows for curve section
-        self.curve_comboboxes = []
-        for i in range(1, 9):
-            combobox = QComboBox()
-            combobox.addItems(["LSCI DT-600", "LSCI DT-400", "LSCI PT-100", "IEC PT100 RTD", "IEC PT1000 RTD", "Simulated Sensor-NTC"])
-            self.curve_comboboxes.append(combobox)
-            self.curve_layout.addWidget(combobox, i, 1)
-        
-        # Delete buttons for curves
-        self.curve_delete_buttons = []
-        for i in range(1, 9):
-            button = QPushButton("DEL")
-            self.curve_delete_buttons.append(button)
-            self.curve_layout.addWidget(button, i, 2)
-
-        
-        # Add widgets to vlayout
-        self.curve_vlayout.addWidget(self.curve_label)
-        self.curve_vlayout.addWidget(self.curve_frame)
+        # Create an instance of GeneralUI
+        self.curve_ui = CurveUI()
 
         # Add profibus and curve layouts to left_h2layout
-        self.left_h2layout.addLayout(self.profibus_ui.vlayout, stretch=1)
-        self.left_h2layout.addLayout(self.curve_vlayout, stretch=1)
+        self.left_h2layout.addLayout(self.profibus_ui.vlayout)
+        self.left_h2layout.addLayout(self.curve_ui.vlayout)
 
         # Sensor setup section
         self.sensor_label = QLabel("<b>Sensor setup</b>")
@@ -274,13 +229,13 @@ class TemperatureWindow(QWidget):
             self.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
             self.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.line_edits[i].editingFinished.connect(self.handle_name_change)
-            self.curve_name_labels[i].editingFinished.connect(self.handle_name_change)
+            self.curve_ui.name_labels[i].editingFinished.connect(self.handle_name_change)
             self.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.curve_delete_buttons[i].clicked.connect(self.handle_delete_curve)
-            self.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
+            self.curve_ui.delete_buttons[i].clicked.connect(self.handle_delete_curve)
+            self.curve_ui.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
 
         self.temp_timer.start()
         self.sensor_timer.start()
@@ -307,13 +262,13 @@ class TemperatureWindow(QWidget):
                 self.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
                 self.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
                 self.line_edits[i].editingFinished.disconnect(self.handle_name_change)
-                self.curve_name_labels[i].editingFinished.disconnect(self.handle_name_change)
+                self.curve_ui.name_labels[i].editingFinished.disconnect(self.handle_name_change)
                 self.current_reversal_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
                 self.autorange_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
                 self.range_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
                 self.display_units_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.curve_delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
-                self.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
+                self.curve_ui.delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
+                self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
 
             self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
         except Exception as e:
@@ -365,7 +320,7 @@ class TemperatureWindow(QWidget):
                 name = self.ser.read(1024).decode().strip()
                 self.table_widget.setItem(row, 0, QTableWidgetItem(name))
                 self.line_edits[row].setText(name)
-                self.curve_name_labels[row].setText(name)
+                self.curve_ui.name_labels[row].setText(name)
         except Exception as e:
             print(f"Error: {e}")
 
@@ -452,19 +407,19 @@ class TemperatureWindow(QWidget):
                 response = self.ser.read(1024).decode().strip().split(",")[:5]
                 name = response[0].strip()
                 if (name == "LSCI_DT-600"):
-                    self.curve_comboboxes[row].setCurrentIndex(0)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(0)
                 elif (name == "LSCI_DT-400"):
-                    self.curve_comboboxes[row].setCurrentIndex(1)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(1)
                 elif (name == "LSCI_PT-100"):
-                    self.curve_comboboxes[row].setCurrentIndex(2)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(2)
                 elif (name == "IEC_PT100_RTD"):
-                    self.curve_comboboxes[row].setCurrentIndex(3)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(3)
                 elif (name == "IEC_PT1000_RTD"):
-                    self.curve_comboboxes[row].setCurrentIndex(4)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(4)
                 elif (name == "Simulated Senso"):
-                    self.curve_comboboxes[row].setCurrentIndex(5)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(5)
                 else:
-                    self.curve_comboboxes[row].setCurrentIndex(-1)
+                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(-1)
         except Exception as e:
             print(f"Error: {e}")
     
@@ -610,7 +565,7 @@ class TemperatureWindow(QWidget):
         
         if (not found):
             j =0
-            for label in self.curve_name_labels:
+            for label in self.curve_ui.name_labels:
                 if (label == sender):
                     row = j
                     break
@@ -621,7 +576,7 @@ class TemperatureWindow(QWidget):
 
         self.table_widget.setItem(row, 0, QTableWidgetItem(new_name))
         self.line_edits[row].setText(new_name)
-        self.curve_name_labels[row].setText(new_name)
+        self.curve_ui.name_labels[row].setText(new_name)
     
     def handle_restore_factory_settings(self):
         message = f"DFLT 99\n"
@@ -630,13 +585,13 @@ class TemperatureWindow(QWidget):
     def handle_delete_curve(self):
         sender = self.sender()
         i = 1
-        for button in self.curve_delete_buttons:
+        for button in self.curve_ui.delete_buttons:
             if (sender == button):
                 message = f"CRVDEL {i}\n"
                 self.ser.write(message.encode())
                 break
             i+=1
-        self.curve_comboboxes[i-1].setCurrentIndex(-1)
+        self.curve_ui.curve_comboboxes[i-1].setCurrentIndex(-1)
 
     def handle_sensor_change(self, index):
         #TODO: if type/power changes this function also gets called for every combobox -> fix that
@@ -889,7 +844,7 @@ class TemperatureWindow(QWidget):
             sender = self.sender()
             input = 0
             i = 1
-            for combobox in self.curve_comboboxes:
+            for combobox in self.curve_ui.curve_comboboxes:
                 if combobox == sender:
                     input = i
                     break
