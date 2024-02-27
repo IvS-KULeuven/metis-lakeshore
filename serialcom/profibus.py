@@ -30,3 +30,27 @@ def read_slots(main_window):
 
     except Exception as e:
         print(f"Error: {e}")
+
+def handle_address_change(main_window):
+    new_address = int(main_window.profibus_ui.address_line_edit.text())
+    message = f"ADDR {new_address}\n"
+    main_window.ser.write(message.encode())
+
+def handle_slot_count_change(main_window):
+    selected_slot = main_window.profibus_ui.slot_combobox.currentIndex()
+    message = f"PROFINUM {selected_slot}\n"
+    main_window.ser.write(message.encode())
+
+def handle_channel_unit_change(main_window):
+    sender_combobox = main_window.sender()
+    row = main_window.profibus_ui.layout.getItemPosition(main_window.profibus_ui.layout.indexOf(sender_combobox))[0]
+    input_number = row - 3  # Offset by 3 to account for the header rows
+
+    channel_index = main_window.profibus_ui.channel_comboboxes[input_number-1].currentIndex()
+    unit_index = main_window.profibus_ui.units_comboboxes[input_number-1].currentIndex()
+
+    main_window.handle_comboboxes_change(input_number, channel_index, unit_index)
+
+def handle_comboboxes_change(main_window, input_number, channel_index, unit_index):
+    message = f"PROFISLOT {input_number},{channel_index+1},{unit_index+1}\n"
+    main_window.ser.write(message.encode())

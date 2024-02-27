@@ -34,3 +34,17 @@ def read_brightness(main_window):
 
     except Exception as e:
         print(f"Error: {e}")
+
+def handle_module_name_change(main_window):
+    new_name = main_window.general_ui.module_name_label.text()
+    message = f"MODNAME {new_name}\n"
+    main_window.ser.write(message.encode())
+
+def handle_brightness_change(main_window):
+    selected_brightness = main_window.general_ui.brightness_combobox.currentIndex()
+    message = f"BRIGT {selected_brightness}\n"
+    main_window.ser.write(message.encode())
+
+def handle_restore_factory_settings(main_window):
+    message = f"DFLT 99\n"
+    main_window.ser.write(message.encode())

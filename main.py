@@ -1,11 +1,11 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QTableWidgetItem
 from PySide6.QtCore import QTimer
 import serial
 import serial.tools.list_ports
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
-from serialcom.general import read_general_information, read_brightness
-from serialcom.profibus import read_address, read_slot_count, read_slots
+from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
+from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, handle_channel_unit_change
 from serialcom.sensor import read_input_names, read_sensor_setup
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
@@ -93,15 +93,15 @@ class MainWindow(QWidget):
         read_temperature(self)
 
         # Connect signals
-        self.general_ui.module_name_label.editingFinished.connect(self.handle_module_name_change)
-        self.profibus_ui.address_line_edit.editingFinished.connect(self.handle_address_change)
-        self.general_ui.brightness_combobox.currentIndexChanged.connect(self.handle_brightness_change)
-        self.profibus_ui.slot_combobox.currentIndexChanged.connect(self.handle_slot_count_change)
-        self.general_ui.restore_button.clicked.connect(self.handle_restore_factory_settings)
+        self.general_ui.module_name_label.editingFinished.connect(lambda: handle_module_name_change(self))
+        self.profibus_ui.address_line_edit.editingFinished.connect(lambda: handle_address_change(self))
+        self.general_ui.brightness_combobox.currentIndexChanged.connect(lambda: handle_brightness_change(self))
+        self.profibus_ui.slot_combobox.currentIndexChanged.connect(lambda: handle_slot_count_change(self))
+        self.general_ui.restore_button.clicked.connect(lambda: handle_restore_factory_settings(self))
         # Connect signals for comboboxes and others
         for i in range(8):
-            self.profibus_ui.channel_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
-            self.profibus_ui.units_comboboxes[i].currentIndexChanged.connect(self.handle_channel_unit_change)
+            self.profibus_ui.channel_comboboxes[i].currentIndexChanged.connect(lambda: handle_channel_unit_change(self))
+            self.profibus_ui.units_comboboxes[i].currentIndexChanged.connect(lambda: handle_channel_unit_change(self))
             self.sensor_ui.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
             self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.sensor_ui.name_line_edits[i].editingFinished.connect(self.handle_name_change)
@@ -152,39 +152,15 @@ class MainWindow(QWidget):
             print(f"Error: {e}")
 
 
-    def handle_module_name_change(self):
-        new_name = self.general_ui.module_name_label.text()
-        message = f"MODNAME {new_name}\n"
-        self.ser.write(message.encode())
 
-    def handle_address_change(self):
-        new_address = int(self.profibus_ui.address_line_edit.text())
-        message = f"ADDR {new_address}\n"
-        self.ser.write(message.encode())
 
-    def handle_brightness_change(self):
-        selected_brightness = self.general_ui.brightness_combobox.currentIndex()
-        message = f"BRIGT {selected_brightness}\n"
-        self.ser.write(message.encode())
+
+
+
     
-    def handle_slot_count_change(self):
-        selected_slot = self.profibus_ui.slot_combobox.currentIndex()
-        message = f"PROFINUM {selected_slot}\n"
-        self.ser.write(message.encode())
+
     
-    def handle_channel_unit_change(self):
-        sender_combobox = self.sender()
-        row = self.profibus_ui.layout.getItemPosition(self.profibus_ui.layout.indexOf(sender_combobox))[0]
-        input_number = row - 3  # Offset by 3 to account for the header rows
 
-        channel_index = self.profibus_ui.channel_comboboxes[input_number-1].currentIndex()
-        unit_index = self.profibus_ui.units_comboboxes[input_number-1].currentIndex()
-
-        self.handle_comboboxes_change(input_number, channel_index, unit_index)
-
-    def handle_comboboxes_change(self, input_number, channel_index, unit_index):
-        message = f"PROFISLOT {input_number},{channel_index+1},{unit_index+1}\n"
-        self.ser.write(message.encode())
     
     def handle_name_change(self):
         sender = self.sender()
@@ -214,9 +190,7 @@ class MainWindow(QWidget):
         self.sensor_ui.name_line_edits[row].setText(new_name)
         self.curve_ui.name_labels[row].setText(new_name)
     
-    def handle_restore_factory_settings(self):
-        message = f"DFLT 99\n"
-        self.ser.write(message.encode())
+
     
     def handle_delete_curve(self):
         sender = self.sender()
