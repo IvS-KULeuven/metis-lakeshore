@@ -5,6 +5,7 @@ import serial.tools.list_ports
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness
+from serialcom.profibus import read_address, read_slot_count, read_slots
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -80,9 +81,9 @@ class MainWindow(QWidget):
         read_general_information(self)
         read_brightness(self)
         self.read_input_names()
-        self.read_address()
-        self.read_slot_count()
-        self.read_slots()
+        read_address(self)
+        read_slot_count(self)
+        read_slots(self)
         self.read_sensor_setup()
         self.read_curves()
         self.read_sensor_units()
@@ -256,39 +257,6 @@ class MainWindow(QWidget):
                     self.curve_ui.curve_comboboxes[row].setCurrentIndex(5)
                 else:
                     self.curve_ui.curve_comboboxes[row].setCurrentIndex(-1)
-        except Exception as e:
-            print(f"Error: {e}")
-    
-    def read_address(self):
-        try:
-            message = "ADDR?\n"
-            self.ser.write(message.encode())
-            address = self.ser.read(1024).decode().strip()
-            self.profibus_ui.address_line_edit.setText(address)
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-    def read_slot_count(self):
-        try:
-            message = "PROFINUM?\n"
-            self.ser.write(message.encode())
-            value = int(self.ser.read(1024).decode().strip())
-            self.profibus_ui.slot_combobox.setCurrentIndex(value)
-
-        except Exception as e:
-            print(f"Error: {e}")
-    
-    def read_slots(self):
-        try:
-            for row in range(8):
-                input_number = row + 1
-                message = f"PROFISLOT? {input_number}\n"
-                self.ser.write(message.encode())
-                data = self.ser.read(1024).decode().strip().split(",")[:2]
-                self.profibus_ui.channel_comboboxes[row].setCurrentIndex(int(data[0])-1)
-                self.profibus_ui.units_comboboxes[row].setCurrentIndex(int(data[1])-1)
-
         except Exception as e:
             print(f"Error: {e}")
 
