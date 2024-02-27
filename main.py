@@ -5,7 +5,7 @@ import serial.tools.list_ports
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
-from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, handle_channel_unit_change
+from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
 from serialcom.sensor import read_input_names, read_sensor_setup
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
@@ -100,8 +100,8 @@ class MainWindow(QWidget):
         self.general_ui.restore_button.clicked.connect(lambda: handle_restore_factory_settings(self))
         # Connect signals for comboboxes and others
         for i in range(8):
-            self.profibus_ui.channel_comboboxes[i].currentIndexChanged.connect(lambda: handle_channel_unit_change(self))
-            self.profibus_ui.units_comboboxes[i].currentIndexChanged.connect(lambda: handle_channel_unit_change(self))
+            profibus_connect_combobox(self.profibus_ui.channel_comboboxes[i],self, i)
+            profibus_connect_combobox(self.profibus_ui.units_comboboxes[i],self, i)
             self.sensor_ui.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
             self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.sensor_ui.name_line_edits[i].editingFinished.connect(self.handle_name_change)
@@ -151,17 +151,6 @@ class MainWindow(QWidget):
         except Exception as e:
             print(f"Error: {e}")
 
-
-
-
-
-
-
-    
-
-    
-
-    
     def handle_name_change(self):
         sender = self.sender()
         new_name = sender.text()
@@ -189,8 +178,6 @@ class MainWindow(QWidget):
         self.temperature_ui.table.setItem(row, 0, QTableWidgetItem(new_name))
         self.sensor_ui.name_line_edits[row].setText(new_name)
         self.curve_ui.name_labels[row].setText(new_name)
-    
-
     
     def handle_delete_curve(self):
         sender = self.sender()
@@ -366,6 +353,16 @@ class MainWindow(QWidget):
             sensor_range_box = self.sensor_ui.layout.itemAtPosition(input, 5).widget()
             sensor_unit_box = self.sensor_ui.layout.itemAtPosition(input, 6).widget()
             file = ""
+
+
+
+
+
+    
+
+    
+
+    
             name = ""
             serial = ""
             format = 0
