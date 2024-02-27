@@ -6,6 +6,7 @@ from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness
 from serialcom.profibus import read_address, read_slot_count, read_slots
+from serialcom.sensor import read_input_names, read_sensor_setup
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -80,11 +81,11 @@ class MainWindow(QWidget):
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
         read_general_information(self)
         read_brightness(self)
-        self.read_input_names()
+        read_input_names(self)
         read_address(self)
         read_slot_count(self)
         read_slots(self)
-        self.read_sensor_setup()
+        read_sensor_setup(self)
         self.read_curves()
         self.read_sensor_units()
         self.read_temperature()
@@ -144,20 +145,6 @@ class MainWindow(QWidget):
                 self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
 
             self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
-        except Exception as e:
-            print(f"Error: {e}")
-
-
-    def read_input_names(self):
-        try:
-            for row in range(8):
-                input_number = row + 1
-                message = f"INNAME? {input_number}\n"
-                self.ser.write(message.encode())
-                name = self.ser.read(1024).decode().strip()
-                self.temperature_ui.table.setItem(row, 0, QTableWidgetItem(name))
-                self.sensor_ui.name_line_edits[row].setText(name)
-                self.curve_ui.name_labels[row].setText(name)
         except Exception as e:
             print(f"Error: {e}")
 
@@ -543,105 +530,6 @@ class MainWindow(QWidget):
                 widget.setEnabled(False)
                 widget.setStyleSheet("QComboBox { color: darkgray; }")
 
-        
-
-    def read_sensor_setup(self):
-        try:
-            for row in range(8):
-                input_number = row + 1
-                message = f"INTYPE? {input_number}\n"
-                self.ser.write(message.encode())
-                response = self.ser.read(1024).decode().strip()
-
-                # Parse the response
-                sensor_type, autorange, range_val, current_reversal, units, enabled = response.split(",")
-
-                # # Update the QComboBoxes based on the parsed values
-                power_combo_box =self.sensor_ui.layout.itemAtPosition(row + 1, 0).widget()
-                type_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 2).widget()
-                autorange_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 4).widget()
-                range_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 5).widget()
-                current_reversal_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 3).widget()
-                display_units_combo_box = self.sensor_ui.layout.itemAtPosition(row + 1, 6).widget()
-
-                # Update Power combo box
-                power_combo_box.setCurrentIndex(int(enabled))
-
-                # Update Type combo box
-                type_combo_box.setCurrentIndex(int(sensor_type)-1)
-
-                # Update Autorange combo box
-                autorange_combo_box.setCurrentIndex(int(autorange))
-
-                # Update Current Reversal combo boxAML is a superset of JSON, so we can utilize JSON style sequences and maps in our constructs:
-                current_reversal_combo_box.setCurrentIndex(int(current_reversal))
-
-                # Update Display Units combo box
-                display_units_combo_box.setCurrentIndex(int(units)-1)
-
-                if int(enabled) == 1:
-                    # Diode
-                    if int(sensor_type) == 1:
-                        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem("10 µA"))
-                        range_combo_box.clear()
-                        range_combo_box.addItems(["7.5 V (10 µA)"])
-                        range_combo_box.setCurrentIndex(int(range_val))
-                        for col in range(2, 7):
-                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
-                            if col in [2, 6]:  # Type and Display Units columns
-                                widget.setEnabled(True)
-                                widget.setStyleSheet("")
-                            else:
-                                widget.setEnabled(False)
-                                widget.setStyleSheet("QComboBox { color: darkgray; }")
-                    # Platinum RTD
-                    elif int(sensor_type) == 2:
-                        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem("1 mA"))
-                        range_combo_box.clear()
-                        range_combo_box.addItems(["1 kΩ (1 mA)"])
-                        range_combo_box.setCurrentIndex(int(range_val))
-                        for col in range(2, 7):
-                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
-                            if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
-                                widget.setEnabled(True)
-                                widget.setStyleSheet("")
-                            else:
-                                widget.setEnabled(False)
-                                widget.setStyleSheet("QComboBox { color: darkgray; }")
-                    # NTC RTD
-                    elif int(sensor_type) == 3:
-                        range_combo_box.clear()
-                        range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
-                        "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
-                        "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
-                        for col in range(2, 7):
-                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
-                            widget.setEnabled(True)
-                            widget.setStyleSheet("")
-
-                    else:
-                        range_combo_box.clear()
-                        range_combo_box.addItems([""])
-                        range_combo_box.setCurrentIndex(int(range_val))
-                        # Only enable type column
-                        for col in range(3, 7):
-                            widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
-                            widget.setEnabled(False)
-                            widget.setStyleSheet("QComboBox { color: darkgray; }")
-                        widget = self.sensor_ui.layout.itemAtPosition(input_number, 2).widget()
-                        widget.setEnabled(True)
-                        widget.setStyleSheet("")
-                else:
-                    range_combo_box.clear()
-                    range_combo_box.addItems([""])
-                    range_combo_box.setCurrentIndex(int(range_val))
-                    for col in range(2, 7):
-                        widget = self.sensor_ui.layout.itemAtPosition(input_number, col).widget()
-                        widget.setEnabled(False)
-                        widget.setStyleSheet("QComboBox { color: darkgray; }")
-
-        except Exception as e:
-                print(f"Error: {e}")
 
     def handle_curve_change(self):
         try:
