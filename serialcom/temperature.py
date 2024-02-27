@@ -1,8 +1,6 @@
 from PySide6.QtWidgets import QTableWidgetItem
-from PySide6.QtCore import QTimer
 
 def read_temperature(main_window):
-        print("read_temperature function called")
         try:
             # Write data to the port to ask temperature in Kelvin
             message = "KRDG? 0\n"

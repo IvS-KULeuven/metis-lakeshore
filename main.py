@@ -126,26 +126,26 @@ class MainWindow(QWidget):
             self.sensor_timer.stop()
             
             # Disconnect signals
-            self.general_ui.module_name_label.editingFinished.disconnect(self.handle_module_name_change)
-            self.profibus_ui.address_line_edit.editingFinished.disconnect(self.handle_address_change)
-            self.general_ui.brightness_combobox.currentIndexChanged.disconnect(self.handle_brightness_change)
-            self.profibus_ui.slot_combobox.currentIndexChanged.disconnect(self.handle_slot_count_change)
-            self.general_ui.restore_button.clicked.disconnect(self.handle_restore_factory_settings)
+            self.general_ui.module_name_label.editingFinished.disconnect()
+            self.profibus_ui.address_line_edit.editingFinished.disconnect()
+            self.general_ui.brightness_combobox.currentIndexChanged.disconnect()
+            self.profibus_ui.slot_combobox.currentIndexChanged.disconnect()
+            self.general_ui.restore_button.clicked.disconnect()
 
             # Disconnect signals for comboboxes and others
             for i in range(8):
-                self.profibus_ui.channel_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
-                self.profibus_ui.units_comboboxes[i].currentIndexChanged.disconnect(self.handle_channel_unit_change)
-                self.sensor_ui.type_comboboxes[i].currentIndexChanged.disconnect(self.handle_type_change)
-                self.sensor_ui.power_comboboxes[i].currentIndexChanged.disconnect(self.handle_power_change)
-                self.sensor_ui.name_line_edits[i].editingFinished.disconnect(self.handle_name_change)
-                self.curve_ui.name_labels[i].editingFinished.disconnect(self.handle_name_change)
-                self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.sensor_ui.range_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.disconnect(self.handle_sensor_change)
-                self.curve_ui.delete_buttons[i].clicked.disconnect(self.handle_delete_curve)
-                self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect(self.handle_curve_change)
+                self.profibus_ui.channel_comboboxes[i].currentIndexChanged.disconnect()
+                self.profibus_ui.units_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.type_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.power_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.name_line_edits[i].editingFinished.disconnect()
+                self.curve_ui.name_labels[i].editingFinished.disconnect()
+                self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.range_comboboxes[i].currentIndexChanged.disconnect()
+                self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.disconnect()
+                self.curve_ui.delete_buttons[i].clicked.disconnect()
+                self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect()
 
             self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
         except Exception as e:
@@ -490,7 +490,6 @@ class MainWindow(QWidget):
             
         except Exception as e:
                 print(f"Error: {e}")
-
 
 
 if __name__ == "__main__":
