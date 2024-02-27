@@ -4,6 +4,7 @@ import serial
 import serial.tools.list_ports
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
+from serialcom.general import read_general_information, read_brightness
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -49,7 +50,6 @@ class MainWindow(QWidget):
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
         self.sensor_timer.timeout.connect(self.read_sensor_units)
 
-
     def find_connected_devices(self):
         # Clear stuff
         self.connection_ui.connection_combobox.clear()
@@ -77,8 +77,8 @@ class MainWindow(QWidget):
         device = self.connection_ui.devices_list[i]
         self.port = device.device
         self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-        self.read_general_information()
-        self.read_brightness()
+        read_general_information(self)
+        read_brightness(self)
         self.read_input_names()
         self.read_address()
         self.read_slot_count()
@@ -145,43 +145,7 @@ class MainWindow(QWidget):
             self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
         except Exception as e:
             print(f"Error: {e}")
-        
-        
-    def read_general_information(self):
-        try:
-            # Retrieve and display module name
-            module_message = "MODNAME?\n"
-            self.ser.write(module_message.encode())
-            module_name = self.ser.read(1024).decode().strip()
-            self.general_ui.module_name_label.setText(module_name)
 
-            # Send command to get general information
-            message = "*IDN?\n"
-            self.ser.write(message.encode())
-
-            # Read response and split into components
-            data = self.ser.read(1024).decode().strip()
-            components = data.split(",")
-
-            # Update labels with general information
-            self.general_ui.serial_number_label.setText(components[2])
-            self.general_ui.firmware_version_label.setText(components[3])
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-    def read_brightness(self):
-        try:
-            # Retrieve and display brightness
-            message = "BRIGT?\n"
-            self.ser.write(message.encode())
-            brightness_value = int(self.ser.read(1024).decode().strip())
-
-            # Set the current index of the combo box based on the brightness value
-            self.general_ui.brightness_combobox.setCurrentIndex(brightness_value)
-
-        except Exception as e:
-            print(f"Error: {e}")
 
     def read_input_names(self):
         try:
