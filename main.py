@@ -7,6 +7,7 @@ from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness
 from serialcom.profibus import read_address, read_slot_count, read_slots
 from serialcom.sensor import read_input_names, read_sensor_setup
+from serialcom.curve import read_curves
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -86,7 +87,7 @@ class MainWindow(QWidget):
         read_slot_count(self)
         read_slots(self)
         read_sensor_setup(self)
-        self.read_curves()
+        read_curves(self)
         self.read_sensor_units()
         self.read_temperature()
 
@@ -222,30 +223,7 @@ class MainWindow(QWidget):
         except Exception as e:
             print(f"Error: {e}")
 
-    def read_curves(self):
-        try:
-            for row in range(8):
-                input_number = row + 1
-                message = f"CRVHDR? {input_number}\n"
-                self.ser.write(message.encode())
-                response = self.ser.read(1024).decode().strip().split(",")[:5]
-                name = response[0].strip()
-                if (name == "LSCI_DT-600"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(0)
-                elif (name == "LSCI_DT-400"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(1)
-                elif (name == "LSCI_PT-100"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(2)
-                elif (name == "IEC_PT100_RTD"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(3)
-                elif (name == "IEC_PT1000_RTD"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(4)
-                elif (name == "Simulated Senso"):
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(5)
-                else:
-                    self.curve_ui.curve_comboboxes[row].setCurrentIndex(-1)
-        except Exception as e:
-            print(f"Error: {e}")
+
 
     def calculate_power(self, row):
         try:
