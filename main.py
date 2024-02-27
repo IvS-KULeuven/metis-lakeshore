@@ -8,6 +8,7 @@ from serialcom.general import read_general_information, read_brightness
 from serialcom.profibus import read_address, read_slot_count, read_slots
 from serialcom.sensor import read_input_names, read_sensor_setup
 from serialcom.curve import read_curves
+from serialcom.temperature import read_temperature, read_sensor_units
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -48,10 +49,10 @@ class MainWindow(QWidget):
         # Create the timers
         self.temp_timer = QTimer(self)
         self.temp_timer.setInterval(10000)  # Update every 10 seconds
-        self.temp_timer.timeout.connect(self.read_temperature)
+        self.temp_timer.timeout.connect(lambda: read_temperature(self))
         self.sensor_timer = QTimer(self)
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(self.read_sensor_units)
+        self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
 
     def find_connected_devices(self):
         # Clear stuff
@@ -88,8 +89,8 @@ class MainWindow(QWidget):
         read_slots(self)
         read_sensor_setup(self)
         read_curves(self)
-        self.read_sensor_units()
-        self.read_temperature()
+        read_sensor_units(self)
+        read_temperature(self)
 
         # Connect signals
         self.general_ui.module_name_label.editingFinished.connect(self.handle_module_name_change)
@@ -111,7 +112,8 @@ class MainWindow(QWidget):
             self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.curve_ui.delete_buttons[i].clicked.connect(self.handle_delete_curve)
             self.curve_ui.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
-
+        
+        # start_timers()
         self.temp_timer.start()
         self.sensor_timer.start()
 
@@ -148,141 +150,6 @@ class MainWindow(QWidget):
             self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
         except Exception as e:
             print(f"Error: {e}")
-
-    def read_temperature(self):
-        try:
-            # Write data to the port to ask temperature in Kelvin
-            message = "KRDG? 0\n"
-            self.ser.write(message.encode())
-
-            # Read temperature data from the port
-            data = self.ser.read(1024).decode().strip()
-            temperatures = data.split(",")[:8]
-
-            # Update table with formatted temperatures
-            for row, temp in enumerate(temperatures):
-                if(self.sensor_ui.power_comboboxes[row].currentIndex() == 1):  #if power is on
-                    formatted_temp = temp.lstrip('+')  # Remove leading '+'
-                    if  '.' in formatted_temp:
-                        formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
-                    if len(formatted_temp) > 0 and formatted_temp[0] == ".":
-                        formatted_temp = '0' + formatted_temp
-                    formatted_temp = formatted_temp + " K"
-                    if formatted_temp == '0.00000 K':
-                        message = f"RDGST? {row+1}\n"
-                        self.ser.write(message.encode())
-                        response = self.ser.read(1024).decode().strip()
-                        match response:
-                            case "1":
-                                formatted_temp = "INV.READ"
-                            case "16":
-                                formatted_temp = "T.UNDER"
-                            case "32":
-                                formatted_temp = "T.OVER"
-                            case "64":
-                                formatted_temp = "S.UNDER"
-                            case "128":
-                                formatted_temp = "S.OVER"
-                    self.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
-                else:
-                    self.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-    def read_sensor_units(self):
-        try:
-            # Write query to the port to ask sensor units
-            message = "SRDG? 0\n"
-            self.ser.write(message.encode())
-
-            # Read sensor units data from the port
-            data = self.ser.read(1024).decode().strip()
-            sensor_units = data.split(",")[:8]
-
-            # Update table with sensor units
-            for row, unit in enumerate(sensor_units):
-                if(self.sensor_ui.power_comboboxes[row].currentIndex() == 1): # If power is on
-                    unit = unit.lstrip('+')  # Remove leading '+'
-                    if '.' in unit:
-                        unit = unit.lstrip('0')  # Remove leading '0's
-                    if len(unit) > 0 and unit[0] == ".":
-                        unit = '0' + unit
-                    if(self.sensor_ui.type_comboboxes[row].currentIndex() == 0):
-                        unit = unit + " V"
-                    else:
-                        unit = unit + " Ω"
-                    self.temperature_ui.table.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
-                    self.set_excitation(row)
-                    self.calculate_power(row)
-                else:
-                    self.temperature_ui.table.setItem(row, 2, QTableWidgetItem(""))
-                    self.temperature_ui.table.setItem(row, 3, QTableWidgetItem(""))
-                    self.temperature_ui.table.setItem(row, 4, QTableWidgetItem(""))
-
-        except Exception as e:
-            print(f"Error: {e}")
-
-
-
-    def calculate_power(self, row):
-        try:
-            sensor_text = self.temperature_ui.table.item(row, 2).text()
-            excitation_text =self.temperature_ui.table.item(row, 3).text()
-
-            if (len(sensor_text) == 0 or len(excitation_text) == 0):
-                return
-            power_value = 0
-            sensor_unit = sensor_text[-1]
-            excitation_unit = excitation_text[-2:]
-
-            sensor_value = float(sensor_text[:-2])
-            excitation_value = float(excitation_text[:-3])
-
-            match excitation_unit:
-                case "mA":
-                    excitation_value = excitation_value /1000
-                case "µA":
-                    excitation_value = excitation_value /1000000
-                case "nA":
-                    excitation_value = excitation_value /1000000000
-
-            match sensor_unit:
-                case "V":
-                    power_value = excitation_value * sensor_value
-                case "Ω":
-                    power_value = excitation_value * excitation_value * sensor_value
-
-            power_unit = " W"
-            multiplier = 1
-            if power_value < 1:
-                # Determine the appropriate multiplier based on the power_value
-                if power_value < 0.000001:
-                    multiplier = 1000000000
-                    power_unit = " nW"
-                elif power_value < 0.001:
-                    multiplier = 1000000
-                    power_unit = " µW"
-                else:
-                    multiplier = 1000
-                    power_unit = " mW"
-
-            # Multiply the number by the appropriate multiplier
-            adjusted_num = power_value * multiplier
-            power = str(round(adjusted_num, 2)) + power_unit
-            self.temperature_ui.table.item(row, 4).setText(power)
-
-        except Exception as e:
-            print(f"Error: {e}")
-    
-    def set_excitation(self, row):
-        range_combo_box = self.sensor_ui.layout.itemAtPosition(row+1, 5).widget()
-        excitation = range_combo_box.currentText()
-        # Extracting the part between parentheses
-        start_index = excitation.find('(') + 1
-        end_index = excitation.find(')', start_index)
-        parsed_excitation = excitation[start_index:end_index]
-        self.temperature_ui.table.setItem(row, 3, QTableWidgetItem(parsed_excitation))
 
 
     def handle_module_name_change(self):
