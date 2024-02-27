@@ -362,12 +362,12 @@ class MainWindow(QWidget):
         message = f"ADDR {new_address}\n"
         self.ser.write(message.encode())
 
-    def handle_brightness_change(self, index):
+    def handle_brightness_change(self):
         selected_brightness = self.general_ui.brightness_combobox.currentIndex()
         message = f"BRIGT {selected_brightness}\n"
         self.ser.write(message.encode())
     
-    def handle_slot_count_change(self, index):
+    def handle_slot_count_change(self):
         selected_slot = self.profibus_ui.slot_combobox.currentIndex()
         message = f"PROFINUM {selected_slot}\n"
         self.ser.write(message.encode())
@@ -429,7 +429,7 @@ class MainWindow(QWidget):
             i+=1
         self.curve_ui.curve_comboboxes[i-1].setCurrentIndex(-1)
 
-    def handle_sensor_change(self, index):
+    def handle_sensor_change(self):
         #TODO: if type/power changes this function also gets called for every combobox -> fix that
         
         # Get the index of the combo box that triggered the change
@@ -449,7 +449,7 @@ class MainWindow(QWidget):
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
 
-    def handle_type_change(self, index):
+    def handle_type_change(self):
         # Get the index of the combo box that triggered the change
         sender_combo_box = self.sender()
 
@@ -512,7 +512,7 @@ class MainWindow(QWidget):
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
             
-    def handle_power_change(self, index):
+    def handle_power_change(self):
         # Get the index of the combo box that triggered the change
         sender_combo_box = self.sender()
 
@@ -675,7 +675,7 @@ class MainWindow(QWidget):
         except Exception as e:
                 print(f"Error: {e}")
 
-    def handle_curve_change(self, index):
+    def handle_curve_change(self):
         try:
             sender = self.sender()
             input = 0
