@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout
 from PySide6.QtCore import QTimer
 import serial
 import serial.tools.list_ports
@@ -9,6 +9,7 @@ from serialcom.profibus import read_address, read_slot_count, read_slots, handle
 from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox, sensor_connect_combobox
 from serialcom.curve import read_curves, curve_connect_delete_button, curve_connect_curve_combobox
 from serialcom.temperature import read_temperature, read_sensor_units
+from serialcom.connect import find_connected_devices
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -41,10 +42,10 @@ class MainWindow(QWidget):
         # Connect connect, disconnect and refresh buttons
         self.connection_ui.connect_button.clicked.connect(self.handle_connect)
         self.connection_ui.disconnect_button.clicked.connect(self.handle_disconnect)
-        self.connection_ui.refresh_button.clicked.connect(self.find_connected_devices)
+        self.connection_ui.refresh_button.clicked.connect(lambda: find_connected_devices(self))
 
         # Call the function to search for connected devices
-        self.find_connected_devices()
+        find_connected_devices(self)
 
         # Create the timers
         self.temp_timer = QTimer(self)
@@ -54,27 +55,7 @@ class MainWindow(QWidget):
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
         self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
 
-    def find_connected_devices(self):
-        # Clear stuff
-        self.connection_ui.connection_combobox.clear()
-        self.connection_ui.devices_list.clear()
-        
-        # Scan USB ports for connected devices
-        devices = serial.tools.list_ports.comports()
-
-        # Add devices to the combobox
-        for device in devices:
-            with serial.Serial(device.device) as ser:
-                device_str = self.remove_duplicate_parts(str(device))
-                self.connection_ui.connection_combobox.addItem(device_str)
-                self.connection_ui.devices_list.append(device)
-
-    def remove_duplicate_parts(self, input_string):
-        parts = input_string.split(" - ")
-        if len(parts) == 3 and parts[1] == parts[2]:
-            return parts[0] + " - " + parts[1]
-        else:
-            return input_string
+    
                 
     def handle_connect(self):
         i = self.connection_ui.connection_combobox.currentIndex()
