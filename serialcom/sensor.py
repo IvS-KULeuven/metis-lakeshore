@@ -111,3 +111,66 @@ def read_sensor_setup(main_window):
 
         except Exception as e:
                 print(f"Error: {e}")
+
+def handle_type_change(main_window, combobox, i):
+    # Get the row number of the combo box in the layout
+    row = i+1
+
+    # Get the selected type
+    selected_type = combobox.currentText()
+
+    # Get the relevant combo boxes for the current row
+    current_reversal_combo_box = main_window.sensor_ui.layout.itemAtPosition(row, 3).widget()
+    autorange_combo_box = main_window.sensor_ui.layout.itemAtPosition(row, 4).widget()
+    range_combo_box = main_window.sensor_ui.layout.itemAtPosition(row, 5).widget()
+    units_combo_box = main_window.sensor_ui.layout.itemAtPosition(row, 6).widget()
+    units_combo_box.setEnabled(True)
+    units_combo_box.setStyleSheet("")
+
+    # Apply constraints based on the selected type
+    if selected_type == "Diode":
+        current_reversal_combo_box.setCurrentIndex(0)
+        current_reversal_combo_box.setEnabled(False)  # Disable current reversal
+        current_reversal_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+        autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
+        autorange_combo_box.setEnabled(False)  # Disable autorange
+        autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+        range_combo_box.clear()
+        range_combo_box.addItems(["7.5 V (10 µA)"])
+        range_combo_box.setEnabled(False)  # Disable range
+        range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+    elif selected_type == "Platinum RTD":
+        autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
+        autorange_combo_box.setEnabled(False)  # Disable autorange
+        autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+        range_combo_box.clear()
+        range_combo_box.addItems(["1 kΩ (1 mA)"])
+        range_combo_box.setEnabled(False)  # Disable range
+        range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
+        current_reversal_combo_box.setEnabled(True)  # Enable current reversal
+        current_reversal_combo_box.setStyleSheet("")
+    else:
+        current_reversal_combo_box.setEnabled(True)
+        current_reversal_combo_box.setStyleSheet("")
+        autorange_combo_box.setEnabled(True)
+        autorange_combo_box.setStyleSheet("")
+        range_combo_box.setEnabled(True)
+        range_combo_box.setStyleSheet("")
+        range_combo_box.clear()
+        range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
+                                "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
+                                "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
+    
+    # Get the values
+    power = main_window.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+    type = main_window.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+    current_reversal = main_window.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+    autorange = main_window.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+    selected_range = main_window.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+    unit = main_window.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
+
+    message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
+    main_window.ser.write(message.encode())
+
+def sensor_connect_type_combobox(combobox, main_window, index):
+    combobox.currentIndexChanged.connect(lambda: handle_type_change(main_window, combobox, index))

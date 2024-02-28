@@ -6,7 +6,7 @@ from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
 from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
-from serialcom.sensor import read_input_names, read_sensor_setup
+from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
 
@@ -102,7 +102,7 @@ class MainWindow(QWidget):
         for i in range(8):
             profibus_connect_combobox(self.profibus_ui.channel_comboboxes[i],self, i)
             profibus_connect_combobox(self.profibus_ui.units_comboboxes[i],self, i)
-            self.sensor_ui.type_comboboxes[i].currentIndexChanged.connect(self.handle_type_change)
+            sensor_connect_type_combobox(self.sensor_ui.type_comboboxes[i], self, i)
             self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
             self.sensor_ui.name_line_edits[i].editingFinished.connect(self.handle_name_change)
             self.curve_ui.name_labels[i].editingFinished.connect(self.handle_name_change)
@@ -209,69 +209,6 @@ class MainWindow(QWidget):
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
-
-    def handle_type_change(self):
-        # Get the index of the combo box that triggered the change
-        sender_combo_box = self.sender()
-
-        # Get the row number of the combo box in the layout
-        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
-
-        # Get the selected type
-        selected_type = sender_combo_box.currentText()
-
-        # Get the relevant combo boxes for the current row
-        current_reversal_combo_box = self.sensor_ui.layout.itemAtPosition(row, 3).widget()
-        autorange_combo_box = self.sensor_ui.layout.itemAtPosition(row, 4).widget()
-        range_combo_box = self.sensor_ui.layout.itemAtPosition(row, 5).widget()
-        units_combo_box = self.sensor_ui.layout.itemAtPosition(row, 6).widget()
-        units_combo_box.setEnabled(True)
-        units_combo_box.setStyleSheet("")
-
-        # Apply constraints based on the selected type
-        if selected_type == "Diode":
-            current_reversal_combo_box.setCurrentIndex(0)
-            current_reversal_combo_box.setEnabled(False)  # Disable current reversal
-            current_reversal_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-            autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
-            autorange_combo_box.setEnabled(False)  # Disable autorange
-            autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-            range_combo_box.clear()
-            range_combo_box.addItems(["7.5 V (10 µA)"])
-            range_combo_box.setEnabled(False)  # Disable range
-            range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-        elif selected_type == "Platinum RTD":
-            autorange_combo_box.setCurrentIndex(0)  # Set autorange to "Off"
-            autorange_combo_box.setEnabled(False)  # Disable autorange
-            autorange_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-            range_combo_box.clear()
-            range_combo_box.addItems(["1 kΩ (1 mA)"])
-            range_combo_box.setEnabled(False)  # Disable range
-            range_combo_box.setStyleSheet("QComboBox { color: darkgray; }")
-            current_reversal_combo_box.setEnabled(True)  # Enable current reversal
-            current_reversal_combo_box.setStyleSheet("")
-        else:
-            current_reversal_combo_box.setEnabled(True)
-            current_reversal_combo_box.setStyleSheet("")
-            autorange_combo_box.setEnabled(True)
-            autorange_combo_box.setStyleSheet("")
-            range_combo_box.setEnabled(True)
-            range_combo_box.setStyleSheet("")
-            range_combo_box.clear()
-            range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
-                                    "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
-                                    "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
-        
-        # Get the values
-        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
-
-        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
-        self.ser.write(message.encode())
             
     def handle_power_change(self):
         # Get the index of the combo box that triggered the change
@@ -353,16 +290,6 @@ class MainWindow(QWidget):
             sensor_range_box = self.sensor_ui.layout.itemAtPosition(input, 5).widget()
             sensor_unit_box = self.sensor_ui.layout.itemAtPosition(input, 6).widget()
             file = ""
-
-
-
-
-
-    
-
-    
-
-    
             name = ""
             serial = ""
             format = 0
