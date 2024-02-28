@@ -9,7 +9,7 @@ from serialcom.profibus import read_address, read_slot_count, read_slots, handle
 from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox, sensor_connect_combobox
 from serialcom.curve import read_curves, curve_connect_delete_button, curve_connect_curve_combobox
 from serialcom.temperature import read_temperature, read_sensor_units
-from serialcom.connect import find_connected_devices
+from serialcom.connect import find_connected_devices, handle_disconnect
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -41,7 +41,7 @@ class MainWindow(QWidget):
 
         # Connect connect, disconnect and refresh buttons
         self.connection_ui.connect_button.clicked.connect(self.handle_connect)
-        self.connection_ui.disconnect_button.clicked.connect(self.handle_disconnect)
+        self.connection_ui.disconnect_button.clicked.connect(lambda: handle_disconnect(self))
         self.connection_ui.refresh_button.clicked.connect(lambda: find_connected_devices(self))
 
         # Call the function to search for connected devices
@@ -56,7 +56,6 @@ class MainWindow(QWidget):
         self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
 
     
-                
     def handle_connect(self):
         i = self.connection_ui.connection_combobox.currentIndex()
         device = self.connection_ui.devices_list[i]
@@ -100,38 +99,6 @@ class MainWindow(QWidget):
 
         self.connection_ui.status_label.setText("<b>Status: </b>        Connected")
     
-    def handle_disconnect(self):
-        try:
-            self.ser.close()
-            self.temp_timer.stop()
-            self.sensor_timer.stop()
-            
-            # Disconnect signals
-            self.general_ui.module_name_label.editingFinished.disconnect()
-            self.profibus_ui.address_line_edit.editingFinished.disconnect()
-            self.general_ui.brightness_combobox.currentIndexChanged.disconnect()
-            self.profibus_ui.slot_combobox.currentIndexChanged.disconnect()
-            self.general_ui.restore_button.clicked.disconnect()
-
-            # Disconnect signals for comboboxes and others
-            for i in range(8):
-                self.profibus_ui.channel_comboboxes[i].currentIndexChanged.disconnect()
-                self.profibus_ui.units_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.type_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.power_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.name_line_edits[i].editingFinished.disconnect()
-                self.curve_ui.name_labels[i].editingFinished.disconnect()
-                self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.range_comboboxes[i].currentIndexChanged.disconnect()
-                self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.disconnect()
-                self.curve_ui.delete_buttons[i].clicked.disconnect()
-                self.curve_ui.curve_comboboxes[i].currentIndexChanged.disconnect()
-
-            self.connection_ui.status_label.setText("<b>Status: </b>        Disconnected")
-        except Exception as e:
-            print(f"Error: {e}")
-
 
 if __name__ == "__main__":
     app = QApplication([])
