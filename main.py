@@ -1,22 +1,9 @@
 from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout
-from PySide6.QtCore import QTimer, Signal, QObject, QThread
+from PySide6.QtCore import QTimer
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.temperature import read_temperature, read_sensor_units
-from serialcom.connect import find_connected_devices, handle_disconnect, handle_connect, connect_signals
-
-class Worker(QObject):
-    finished_signal = Signal()
-    start_timers_signal = Signal()
-
-    def __init__(self, main_window):
-        super().__init__()
-        self.main_window = main_window
-
-    def run(self):
-        handle_connect(self.main_window)
-        self.start_timers_signal.emit()
-        self.finished_signal.emit()  # Emit the finished signal when the task is complete
+from serialcom.connect import find_connected_devices, handle_disconnect, handle_connect
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -51,7 +38,7 @@ class MainWindow(QWidget):
         self.worker_thread = None
 
         # Connect the buttons
-        self.connection_ui.connect_button.clicked.connect(self.handle_connect_button)
+        self.connection_ui.connect_button.clicked.connect(lambda: handle_connect(self))
         self.connection_ui.disconnect_button.clicked.connect(lambda: handle_disconnect(self))
         self.connection_ui.refresh_button.clicked.connect(lambda: find_connected_devices(self))
 
@@ -65,31 +52,6 @@ class MainWindow(QWidget):
         self.sensor_timer = QTimer(self)
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
         self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
-
-    def handle_connect_button(self):
-        if not self.worker_thread or not self.worker_thread.isRunning():
-            # Create new worker and thread
-            self.worker = Worker(self)
-            self.worker_thread = QThread()
-            self.worker.moveToThread(self.worker_thread)
-            self.worker.finished_signal.connect(self.handle_worker_finished)  # Connect the finished signal
-            self.worker_thread.started.connect(self.worker.run)
-            self.worker.start_timers_signal.connect(self.start_timers)
-            self.worker_thread.start()
-
-    def handle_worker_finished(self):
-        # Perform cleanup when the worker has finished its task
-        if self.worker_thread and self.worker_thread.isRunning():
-            print("deleting thread")
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.worker_thread = None
-            self.worker = None
-        connect_signals(self)
-
-    def start_timers(self):
-        self.temp_timer.start()
-        self.sensor_timer.start()
 
 if __name__ == "__main__":
     app = QApplication([])
