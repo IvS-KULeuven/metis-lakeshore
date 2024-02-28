@@ -247,11 +247,31 @@ def handle_power_change(main_window, combobox, i):
             widget.setEnabled(False)
             widget.setStyleSheet("QComboBox { color: darkgray; }")
 
-def sensor_connect_type_combobox(combobox, main_window, index):
-    combobox.currentIndexChanged.connect(lambda: handle_type_change(main_window, combobox, index))
+
+def handle_sensor_change(main_window, i):
+        # Get the row number of the combo box in the layout
+        row = i+1
+
+        # Get the values
+        power = main_window.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+        type = main_window.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+        current_reversal = main_window.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+        autorange = main_window.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+        selected_range = main_window.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+        unit = main_window.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
+
+        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
+        main_window.ser.write(message.encode())
+
 
 def sensor_connect_name_edit(sender, main_window, index):
     sender.editingFinished.connect(lambda: handle_name_change(main_window, sender, index))
 
+def sensor_connect_type_combobox(combobox, main_window, index):
+    combobox.currentIndexChanged.connect(lambda: handle_type_change(main_window, combobox, index))
+
 def sensor_connect_power_combobox(combobox, main_window, index):
     combobox.currentIndexChanged.connect(lambda: handle_power_change(main_window, combobox, index))
+
+def sensor_connect_combobox(combobox, main_window, index):
+    combobox.currentIndexChanged.connect(lambda: handle_sensor_change(main_window, index))

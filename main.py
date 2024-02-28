@@ -6,7 +6,7 @@ from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
 from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
-from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox
+from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox, sensor_connect_combobox
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
 
@@ -106,10 +106,10 @@ class MainWindow(QWidget):
             sensor_connect_power_combobox(self.sensor_ui.power_comboboxes[i], self, i)
             sensor_connect_name_edit(self.sensor_ui.name_line_edits[i], self, i)
             sensor_connect_name_edit(self.curve_ui.name_labels[i], self, i)
-            self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.sensor_ui.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
-            self.sensor_ui.display_units_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
+            sensor_connect_combobox(self.sensor_ui.current_reversal_comboboxes[i], self, i)
+            sensor_connect_combobox(self.sensor_ui.autorange_comboboxes[i], self, i)
+            sensor_connect_combobox(self.sensor_ui.range_comboboxes[i], self, i)
+            sensor_connect_combobox(self.sensor_ui.display_units_comboboxes[i], self, i)
             self.curve_ui.delete_buttons[i].clicked.connect(self.handle_delete_curve)
             self.curve_ui.curve_comboboxes[i].currentIndexChanged.connect(self.handle_curve_change)
         
@@ -162,26 +162,6 @@ class MainWindow(QWidget):
                 break
             i+=1
         self.curve_ui.curve_comboboxes[i-1].setCurrentIndex(-1)
-
-    def handle_sensor_change(self):
-        #TODO: if type/power changes this function also gets called for every combobox -> fix that
-        
-        # Get the index of the combo box that triggered the change
-        sender_combo_box = self.sender()
-
-        # Get the row number of the combo box in the layout
-        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
-
-        # Get the values
-        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
-
-        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
-        self.ser.write(message.encode())
         
 
     def handle_curve_change(self):
