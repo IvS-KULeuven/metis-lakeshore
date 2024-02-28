@@ -111,6 +111,20 @@ def read_sensor_setup(main_window):
 
         except Exception as e:
                 print(f"Error: {e}")
+                
+
+def handle_name_change(main_window, sender, row):
+    # Get the new name
+    new_name = sender.text()
+
+    message = f"INNAME {row+1},{new_name}\n"
+    main_window.ser.write(message.encode())
+
+    # Change the name on the UI elements
+    main_window.temperature_ui.table.setItem(row, 0, QTableWidgetItem(new_name))
+    main_window.sensor_ui.name_line_edits[row].setText(new_name)
+    main_window.curve_ui.name_labels[row].setText(new_name)
+
 
 def handle_type_change(main_window, combobox, i):
     # Get the row number of the combo box in the layout
@@ -174,3 +188,6 @@ def handle_type_change(main_window, combobox, i):
 
 def sensor_connect_type_combobox(combobox, main_window, index):
     combobox.currentIndexChanged.connect(lambda: handle_type_change(main_window, combobox, index))
+
+def sensor_connect_name_edit(sender, main_window, index):
+    sender.editingFinished.connect(lambda: handle_name_change(main_window, sender, index))

@@ -6,7 +6,7 @@ from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
 from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
-from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox
+from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
 
@@ -104,8 +104,8 @@ class MainWindow(QWidget):
             profibus_connect_combobox(self.profibus_ui.units_comboboxes[i],self, i)
             sensor_connect_type_combobox(self.sensor_ui.type_comboboxes[i], self, i)
             self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
-            self.sensor_ui.name_line_edits[i].editingFinished.connect(self.handle_name_change)
-            self.curve_ui.name_labels[i].editingFinished.connect(self.handle_name_change)
+            sensor_connect_name_edit(self.sensor_ui.name_line_edits[i], self, i)
+            sensor_connect_name_edit(self.curve_ui.name_labels[i], self, i)
             self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.sensor_ui.autorange_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
             self.sensor_ui.range_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
@@ -151,33 +151,6 @@ class MainWindow(QWidget):
         except Exception as e:
             print(f"Error: {e}")
 
-    def handle_name_change(self):
-        sender = self.sender()
-        new_name = sender.text()
-        row = 0
-        i =0
-        found = False
-        for line_edit in self.sensor_ui.name_line_edits:
-            if (line_edit == sender):
-                row = i
-                found = True
-                break
-            i+=1
-        
-        if (not found):
-            j =0
-            for label in self.curve_ui.name_labels:
-                if (label == sender):
-                    row = j
-                    break
-                j+=1
-
-        message = f"INNAME {row+1},{new_name}\n"
-        self.ser.write(message.encode())
-
-        self.temperature_ui.table.setItem(row, 0, QTableWidgetItem(new_name))
-        self.sensor_ui.name_line_edits[row].setText(new_name)
-        self.curve_ui.name_labels[row].setText(new_name)
     
     def handle_delete_curve(self):
         sender = self.sender()
