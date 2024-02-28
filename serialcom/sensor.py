@@ -186,8 +186,72 @@ def handle_type_change(main_window, combobox, i):
     message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
     main_window.ser.write(message.encode())
 
+def handle_power_change(main_window, combobox, i):
+
+    # Get the row number of the combo box in the layout
+    row = i+1
+    
+    # Get the selected power state
+    selected_power_state = combobox.currentText()
+
+    # Get the values
+    power = main_window.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
+    type = main_window.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
+    current_reversal = main_window.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
+    autorange = main_window.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
+    selected_range = main_window.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
+    unit = main_window.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
+
+    #range combobox
+    range_combo_box = main_window.sensor_ui.layout.itemAtPosition(row, 5).widget()
+
+
+    message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
+    main_window.ser.write(message.encode())
+
+    if selected_power_state == "On":
+        # Diode
+        if type == 1:
+            for col in range(2, 7):
+                widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
+                if col in [2, 6]:  # Type and Display Units columns
+                    widget.setEnabled(True)
+                    widget.setStyleSheet("")
+        # Platinum RTD
+        elif type == 2:
+            for col in range(2, 7):
+                widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
+                if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
+                    widget.setEnabled(True)
+                    widget.setStyleSheet("")
+        # NTC RTD
+        elif type == 3:
+            range_combo_box.clear()
+            range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
+            "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
+            "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
+            range_combo_box.setCurrentIndex(int(selected_range))
+            for col in range(2, 7):
+                widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
+                widget.setEnabled(True)
+                widget.setStyleSheet("")
+
+        else:
+            # Only enable type column
+            widget = main_window.sensor_ui.layout.itemAtPosition(row, 2).widget()
+            widget.setEnabled(True)
+            widget.setStyleSheet("")
+    else:
+        for col in range(2, 7):
+            widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
+            widget.setEnabled(False)
+            widget.setStyleSheet("QComboBox { color: darkgray; }")
+
 def sensor_connect_type_combobox(combobox, main_window, index):
     combobox.currentIndexChanged.connect(lambda: handle_type_change(main_window, combobox, index))
 
 def sensor_connect_name_edit(sender, main_window, index):
     sender.editingFinished.connect(lambda: handle_name_change(main_window, sender, index))
+
+def sensor_connect_power_combobox(combobox, main_window, index):
+    combobox.currentIndexChanged.connect(lambda: handle_power_change(main_window, combobox, index))

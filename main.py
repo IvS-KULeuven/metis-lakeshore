@@ -6,7 +6,7 @@ from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.general import read_general_information, read_brightness, handle_module_name_change, handle_brightness_change, handle_restore_factory_settings
 from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
-from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit
+from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox
 from serialcom.curve import read_curves
 from serialcom.temperature import read_temperature, read_sensor_units
 
@@ -103,7 +103,7 @@ class MainWindow(QWidget):
             profibus_connect_combobox(self.profibus_ui.channel_comboboxes[i],self, i)
             profibus_connect_combobox(self.profibus_ui.units_comboboxes[i],self, i)
             sensor_connect_type_combobox(self.sensor_ui.type_comboboxes[i], self, i)
-            self.sensor_ui.power_comboboxes[i].currentIndexChanged.connect(self.handle_power_change)
+            sensor_connect_power_combobox(self.sensor_ui.power_comboboxes[i], self, i)
             sensor_connect_name_edit(self.sensor_ui.name_line_edits[i], self, i)
             sensor_connect_name_edit(self.curve_ui.name_labels[i], self, i)
             self.sensor_ui.current_reversal_comboboxes[i].currentIndexChanged.connect(self.handle_sensor_change)
@@ -182,70 +182,7 @@ class MainWindow(QWidget):
 
         message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
         self.ser.write(message.encode())
-            
-    def handle_power_change(self):
-        # Get the index of the combo box that triggered the change
-        sender_combo_box = self.sender()
-
-        # Get the row number of the combo box in the layout
-        row = self.sensor_ui.layout.getItemPosition(self.sensor_ui.layout.indexOf(sender_combo_box))[0]
         
-        # Get the selected power state
-        selected_power_state = sender_combo_box.currentText()
-
-        # Get the values
-        power = self.sensor_ui.layout.itemAtPosition(row, 0).widget().currentIndex()
-        type = self.sensor_ui.layout.itemAtPosition(row, 2).widget().currentIndex() +1
-        current_reversal = self.sensor_ui.layout.itemAtPosition(row, 3).widget().currentIndex()
-        autorange = self.sensor_ui.layout.itemAtPosition(row, 4).widget().currentIndex()
-        selected_range = self.sensor_ui.layout.itemAtPosition(row, 5).widget().currentIndex()
-        unit = self.sensor_ui.layout.itemAtPosition(row, 6).widget().currentIndex() +1
-
-        #range combobox
-        range_combo_box = self.sensor_ui.layout.itemAtPosition(row, 5).widget()
-
-
-        message = f"INTYPE {row},{type},{autorange},{selected_range},{current_reversal},{unit},{power}\n"
-        self.ser.write(message.encode())
-
-        if selected_power_state == "On":
-            # Diode
-            if type == 1:
-                for col in range(2, 7):
-                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
-                    if col in [2, 6]:  # Type and Display Units columns
-                        widget.setEnabled(True)
-                        widget.setStyleSheet("")
-            # Platinum RTD
-            elif type == 2:
-                for col in range(2, 7):
-                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
-                    if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
-                        widget.setEnabled(True)
-                        widget.setStyleSheet("")
-            # NTC RTD
-            elif type == 3:
-                range_combo_box.clear()
-                range_combo_box.addItems(["10 Ω (1 mA)", "30 Ω (300 µA)", "100 Ω (100 µA)",
-                "300 Ω (30 µA)", "1 kΩ (10 µA)", "3 kΩ (3 µA)", "10 kΩ (1 µA)",
-                "30 kΩ (300 nA)", "100 kΩ (100 nA)"])
-                range_combo_box.setCurrentIndex(int(selected_range))
-                for col in range(2, 7):
-                    widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
-                    widget.setEnabled(True)
-                    widget.setStyleSheet("")
-
-            else:
-                # Only enable type column
-                widget = self.sensor_ui.layout.itemAtPosition(row, 2).widget()
-                widget.setEnabled(True)
-                widget.setStyleSheet("")
-        else:
-            for col in range(2, 7):
-                widget = self.sensor_ui.layout.itemAtPosition(row, col).widget()
-                widget.setEnabled(False)
-                widget.setStyleSheet("QComboBox { color: darkgray; }")
-
 
     def handle_curve_change(self):
         try:
