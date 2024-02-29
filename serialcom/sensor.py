@@ -15,7 +15,6 @@ def read_input_names(main_window):
         print(f"Error: {e}")
 
 def update_widget_stylesheet(main_window, widget, stylesheet):
-    # print(f"update_widget_stylesheet called on {widget} using stylesheet {stylesheet}")
     main_window.worker.update_stylesheet_signal.emit(widget, stylesheet)
 
 def read_sensor_setup(main_window):

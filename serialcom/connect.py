@@ -76,15 +76,15 @@ def read_serial(main_window):
             main_window.port = device.device
             main_window.ser = serial.Serial(main_window.port, main_window.baudrate, timeout=main_window.timeout)
             read_general_information(main_window)
-            # read_brightness(main_window)
-            # read_address(main_window)
-            # read_slot_count(main_window)
-            # read_slots(main_window)
-            # read_input_names(main_window)
-            # read_curves(main_window)
+            read_brightness(main_window)
+            read_address(main_window)
+            read_slot_count(main_window)
+            read_slots(main_window)
+            read_input_names(main_window)
+            read_curves(main_window)
             read_sensor_setup(main_window)
-            # read_temperature(main_window)
-            # read_sensor_units(main_window)
+            read_temperature(main_window)
+            read_sensor_units(main_window)
         except Exception as e:
             print(f"Error: {e}")
     
