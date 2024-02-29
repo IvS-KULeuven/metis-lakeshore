@@ -1,46 +1,46 @@
 from PySide6.QtWidgets import QTableWidgetItem
 
 def read_temperature(main_window):
-        print("reading temp called")
-        try:
-            # Write data to the port to ask temperature in Kelvin
-            message = "KRDG? 0\n"
-            main_window.ser.write(message.encode())
+    print("Reading temperature")
+    try:
+        # Write data to the port to ask temperature in Kelvin
+        message = "KRDG? 0\n"
+        main_window.ser.write(message.encode())
 
-            # Read temperature data from the port
-            data = main_window.ser.read(1024).decode().strip()
-            temperatures = data.split(",")[:8]
+        # Read temperature data from the port
+        data = main_window.ser.read(1024).decode().strip()
+        temperatures = data.split(",")[:8]
 
-            # Update table with formatted temperatures
-            for row, temp in enumerate(temperatures):
-                if(main_window.sensor_ui.power_comboboxes[row].currentIndex() == 1):  #if power is on
-                    formatted_temp = temp.lstrip('+')  # Remove leading '+'
-                    if  '.' in formatted_temp:
-                        formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
-                    if len(formatted_temp) > 0 and formatted_temp[0] == ".":
-                        formatted_temp = '0' + formatted_temp
-                    formatted_temp = formatted_temp + " K"
-                    if formatted_temp == '0.00000 K':
-                        message = f"RDGST? {row+1}\n"
-                        main_window.ser.write(message.encode())
-                        response = main_window.ser.read(1024).decode().strip()
-                        match response:
-                            case "1":
-                                formatted_temp = "INV.READ"
-                            case "16":
-                                formatted_temp = "T.UNDER"
-                            case "32":
-                                formatted_temp = "T.OVER"
-                            case "64":
-                                formatted_temp = "S.UNDER"
-                            case "128":
-                                formatted_temp = "S.OVER"
-                    main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
-                else:
-                    main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
+        # Update table with formatted temperatures
+        for row, temp in enumerate(temperatures):
+            if(main_window.sensor_ui.power_comboboxes[row].currentIndex() == 1):  #if power is on
+                formatted_temp = temp.lstrip('+')  # Remove leading '+'
+                if  '.' in formatted_temp:
+                    formatted_temp = formatted_temp.lstrip('0')  # Remove leading '0's
+                if len(formatted_temp) > 0 and formatted_temp[0] == ".":
+                    formatted_temp = '0' + formatted_temp
+                formatted_temp = formatted_temp + " K"
+                if formatted_temp == '0.00000 K':
+                    message = f"RDGST? {row+1}\n"
+                    main_window.ser.write(message.encode())
+                    response = main_window.ser.read(1024).decode().strip()
+                    match response:
+                        case "1":
+                            formatted_temp = "INV.READ"
+                        case "16":
+                            formatted_temp = "T.UNDER"
+                        case "32":
+                            formatted_temp = "T.OVER"
+                        case "64":
+                            formatted_temp = "S.UNDER"
+                        case "128":
+                            formatted_temp = "S.OVER"
+                main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
+            else:
+                main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
 
-        except Exception as e:
-            print(f"Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
 
 def read_sensor_units(main_window):
     try:
@@ -75,9 +75,8 @@ def read_sensor_units(main_window):
     except Exception as e:
         print(f"Error: {e}")
 
-
-
 def calculate_power(main_window, row):
+    print("Calculating power")
     try:
         sensor_text = main_window.temperature_ui.table.item(row, 2).text()
         excitation_text =main_window.temperature_ui.table.item(row, 3).text()
@@ -122,7 +121,7 @@ def calculate_power(main_window, row):
         # Multiply the number by the appropriate multiplier
         adjusted_num = power_value * multiplier
         power = str(round(adjusted_num, 2)) + power_unit
-        main_window.temperature_ui.table.item(row, 4).setText(power)
+        main_window.temperature_ui.table.setItem(row, 4, QTableWidgetItem(power))
 
     except Exception as e:
         print(f"Error: {e}")
