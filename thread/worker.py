@@ -1,8 +1,10 @@
+from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal, QObject
 
 class Worker(QObject):
     finished_signal = Signal()
     start_timers_signal = Signal()
+    update_stylesheet_signal = Signal(QWidget, str)
 
     def __init__(self, main_window):
         super().__init__()

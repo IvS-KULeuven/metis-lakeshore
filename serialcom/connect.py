@@ -82,7 +82,7 @@ def read_serial(main_window):
             # read_slots(main_window)
             # read_input_names(main_window)
             # read_curves(main_window)
-            # read_sensor_setup(main_window)
+            read_sensor_setup(main_window)
             # read_temperature(main_window)
             # read_sensor_units(main_window)
         except Exception as e:

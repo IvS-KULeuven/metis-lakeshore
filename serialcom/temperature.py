@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QTableWidgetItem
 
 def read_temperature(main_window):
-    print("Reading temperature")
     try:
         # Write data to the port to ask temperature in Kelvin
         message = "KRDG? 0\n"
@@ -76,7 +75,6 @@ def read_sensor_units(main_window):
         print(f"Error: {e}")
 
 def calculate_power(main_window, row):
-    print("Calculating power")
     try:
         sensor_text = main_window.temperature_ui.table.item(row, 2).text()
         excitation_text =main_window.temperature_ui.table.item(row, 3).text()

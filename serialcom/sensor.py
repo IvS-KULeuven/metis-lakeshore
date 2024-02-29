@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QTableWidgetItem
+import thread.worker
 
 def read_input_names(main_window):
     try:
@@ -13,6 +14,9 @@ def read_input_names(main_window):
     except Exception as e:
         print(f"Error: {e}")
 
+def update_widget_stylesheet(main_window, widget, stylesheet):
+    # print(f"update_widget_stylesheet called on {widget} using stylesheet {stylesheet}")
+    main_window.worker.update_stylesheet_signal.emit(widget, stylesheet)
 
 def read_sensor_setup(main_window):
     try:
@@ -59,10 +63,10 @@ def read_sensor_setup(main_window):
                         widget = main_window.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                         if col in [2, 6]:  # Type and Display Units columns
                             widget.setEnabled(True)
-                            widget.setStyleSheet("")
+                            update_widget_stylesheet(main_window, widget, "")
                         else:
                             widget.setEnabled(False)
-                            widget.setStyleSheet("QComboBox { color: darkgray; }")
+                            update_widget_stylesheet(main_window, widget, "QComboBox { color: darkgray; }")
                 # Platinum RTD
                 elif int(sensor_type) == 2:
                     main_window.temperature_ui.table.setItem(row, 3, QTableWidgetItem("1 mA"))
@@ -73,10 +77,10 @@ def read_sensor_setup(main_window):
                         widget = main_window.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                         if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
                             widget.setEnabled(True)
-                            widget.setStyleSheet("")
+                            update_widget_stylesheet(main_window, widget, "")
                         else:
                             widget.setEnabled(False)
-                            widget.setStyleSheet("QComboBox { color: darkgray; }")
+                            update_widget_stylesheet(main_window, widget, "QComboBox { color: darkgray; }")
                 # NTC RTD
                 elif int(sensor_type) == 3:
                     range_combo_box.clear()
@@ -86,7 +90,7 @@ def read_sensor_setup(main_window):
                     for col in range(2, 7):
                         widget = main_window.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                         widget.setEnabled(True)
-                        widget.setStyleSheet("")
+                        update_widget_stylesheet(main_window, widget, "QComboBox { color: darkgray; }")
 
                 else:
                     range_combo_box.clear()
@@ -96,10 +100,10 @@ def read_sensor_setup(main_window):
                     for col in range(3, 7):
                         widget = main_window.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                         widget.setEnabled(False)
-                        widget.setStyleSheet("QComboBox { color: darkgray; }")
+                        update_widget_stylesheet(main_window, widget, "QComboBox { color: darkgray; }")
                     widget = main_window.sensor_ui.layout.itemAtPosition(input_number, 2).widget()
                     widget.setEnabled(True)
-                    widget.setStyleSheet("")
+                    update_widget_stylesheet(main_window, widget, "")
             else:
                 range_combo_box.clear()
                 range_combo_box.addItems([""])
@@ -107,7 +111,7 @@ def read_sensor_setup(main_window):
                 for col in range(2, 7):
                     widget = main_window.sensor_ui.layout.itemAtPosition(input_number, col).widget()
                     widget.setEnabled(False)
-                    widget.setStyleSheet("QComboBox { color: darkgray; }")
+                    update_widget_stylesheet(main_window, widget, "QComboBox { color: darkgray; }")
 
     except Exception as e:
             print(f"Error: {e}")
