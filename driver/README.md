@@ -16,7 +16,8 @@ cd /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source
 make clean
 make
 cp /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.ko /usr/lib/modules/`uname -r`/kernel/drivers/usb/serial/cp210x.ko
-depmod # lees module dependencies opnieuw in```
+depmod # lees module dependencies opnieuw in
+```
 
 Then load in the files:
 ```bash
