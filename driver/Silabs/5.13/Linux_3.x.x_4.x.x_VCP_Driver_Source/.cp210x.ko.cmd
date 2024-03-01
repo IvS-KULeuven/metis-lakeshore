@@ -1,0 +1,1 @@
+cmd_/root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.ko /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.o /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.mod.o;  true

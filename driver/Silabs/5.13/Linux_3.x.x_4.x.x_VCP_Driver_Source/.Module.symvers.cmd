@@ -1,0 +1,1 @@
+cmd_/root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/Module.symvers := sed 's/\.ko$$/\.o/' /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/modules.order | scripts/mod/modpost -m -a  -o /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/Module.symvers -e -i Module.symvers   -T -

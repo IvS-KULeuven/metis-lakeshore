@@ -1,0 +1,1 @@
+cmd_/root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/modules.order := {   echo /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/cp210x.ko; :; } | awk '!x[$$0]++' - > /root/Silabs/5.13/Linux_3.x.x_4.x.x_VCP_Driver_Source/modules.order
