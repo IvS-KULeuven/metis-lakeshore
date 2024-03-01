@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout,QLabel,QComboBox, QFrame, QSizePolicy, QGridLayout, QLineEdit
+from PySide6.QtWidgets import QWidget ,QLabel, QComboBox, QFrame, QSizePolicy, QGridLayout, QLineEdit
 
 class SensorUI(QWidget):
     def __init__(self):

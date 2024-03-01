@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QSizePolicy, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QSizePolicy, QGridLayout, QTableWidget, QHeaderView
 from PySide6.QtCore import Qt
 
 class TemperatureUI(QWidget):

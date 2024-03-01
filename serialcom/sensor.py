@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import QTableWidgetItem
-import thread.worker
 
 def read_input_names(main_window):
     try:
