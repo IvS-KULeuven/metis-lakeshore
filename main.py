@@ -16,7 +16,7 @@ class MainWindow(QWidget):
         self.left_ui = LeftUI()
         self.temperature_ui = TemperatureUI()
 
-        # Add left and right layouts to main layoutd
+        # Add left and right layouts to main layout
         self.layout.addLayout(self.left_ui.layout)
         self.layout.addLayout(self.temperature_ui.vlayout)
 
@@ -33,7 +33,11 @@ class MainWindow(QWidget):
         self.timeout = 1
         self.ser = ''
 
-        # Connect the connect, disconnect and refresh buttons
+        # Initialize worker and thread
+        self.worker = None
+        self.worker_thread = None
+
+        # Connect the buttons
         self.connection_ui.connect_button.clicked.connect(lambda: handle_connect(self))
         self.connection_ui.disconnect_button.clicked.connect(lambda: handle_disconnect(self))
         self.connection_ui.refresh_button.clicked.connect(lambda: find_connected_devices(self))
@@ -48,7 +52,6 @@ class MainWindow(QWidget):
         self.sensor_timer = QTimer(self)
         self.sensor_timer.setInterval(10000)  # Update every 10 seconds
         self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
-
 
 if __name__ == "__main__":
     app = QApplication([])
