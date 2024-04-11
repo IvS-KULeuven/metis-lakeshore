@@ -7,6 +7,7 @@ from serialcom.curve import read_curves, curve_connect_delete_button, curve_conn
 from serialcom.temperature import read_temperature, read_sensor_units
 from PySide6.QtCore import QThread
 from thread.worker import Worker
+from thread.workersignals import WorkerSignals
 
 def find_connected_devices(main_window):
         try:
@@ -119,25 +120,27 @@ def connect_signals(main_window):
 
 def handle_connect(main_window):
     try:
-        if not main_window.worker_thread or not main_window.worker_thread.isRunning():
-            # Create new worker and thread
-            main_window.worker = Worker(main_window)
-            main_window.worker_thread = QThread()
-            main_window.worker.moveToThread(main_window.worker_thread)
-            main_window.worker.finished_signal.connect(lambda: handle_worker_finished(main_window))
-            main_window.worker_thread.started.connect(main_window.worker.run)
-            main_window.worker.start_timers_signal.connect(lambda: start_timers(main_window))
-            main_window.worker_thread.start()
+        # if not main_window.threadpool:
+        # Create new worker and thread
+        main_window.worker = Worker(main_window)
+        # main_window.worker_thread = QThread()
+        # main_window.worker.moveToThread(main_window.worker_thread)
+        main_window.worker.signals.finished_signal.connect(lambda: handle_worker_finished(main_window))
+        # main_window.worker_thread.started.connect(main_window.worker.run)
+        main_window.worker.signals.start_timers_signal.connect(lambda: start_timers(main_window))
+        # main_window.worker_thread.start()
+        main_window.threadpool.start(main_window.worker)
     except Exception as e:
         print(f"Error: {e}")
 
 def handle_worker_finished(main_window):
     try:
         # Perform cleanup when the worker has finished its task
-        if main_window.worker_thread and main_window.worker_thread.isRunning():
-            main_window.worker_thread.quit()
-            main_window.worker_thread.wait()
-            main_window.worker_thread = None
+        if main_window.threadpool:
+            print("Clearing Threadpool")
+            main_window.threadpool.clear()
+            # main_window.threadpool.wait()
+            # main_window.threadpool.delete()
             main_window.worker = None
         connect_signals(main_window)
     except Exception as e:

@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QThreadPool
 from ui.left_ui import LeftUI
 from ui.temperature_ui import TemperatureUI
 from serialcom.temperature import read_temperature, read_sensor_units
@@ -34,6 +34,8 @@ class MainWindow(QWidget):
         self.ser = ''
 
         # Initialize worker and thread
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
         self.worker = None
         self.worker_thread = None
 
