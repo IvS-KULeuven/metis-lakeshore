@@ -69,22 +69,22 @@ def handle_disconnect(main_window):
         print(f"Error: {e}")
 
 
-def read_serial(main_window):
+def read_serial(main_window, signal_manager):
         try:
             i = main_window.connection_ui.connection_combobox.currentIndex()
             device = main_window.connection_ui.devices_list[i]
             main_window.port = device.device
             main_window.ser = serial.Serial(main_window.port, main_window.baudrate, timeout=main_window.timeout)
-            read_general_information(main_window)
-            read_brightness(main_window)
-            read_address(main_window)
-            read_slot_count(main_window)
-            read_slots(main_window)
-            read_input_names(main_window)
-            read_curves(main_window)
-            read_sensor_setup(main_window)
-            read_temperature(main_window)
-            read_sensor_units(main_window)
+            read_general_information(main_window, signal_manager)
+            # read_brightness(main_window)
+            # read_address(main_window)
+            # read_slot_count(main_window)
+            # read_slots(main_window)
+            # read_input_names(main_window)
+            # read_curves(main_window)
+            # read_sensor_setup(main_window)
+            # read_temperature(main_window)
+            # read_sensor_units(main_window)
         except Exception as e:
             print(f"Error: {e}")
     
@@ -117,11 +117,11 @@ def connect_signals(main_window):
     except Exception as e:
         print(f"Error: {e}")
 
-def handle_connect(main_window):
+def handle_connect(main_window, signal_manager):
     try:
         if not main_window.worker_thread or not main_window.worker_thread.isRunning():
             # Create new worker and thread
-            main_window.worker = Worker(main_window)
+            main_window.worker = Worker(main_window, signal_manager)
             main_window.worker_thread = QThread()
             main_window.worker.moveToThread(main_window.worker_thread)
             main_window.worker.finished_signal.connect(lambda: handle_worker_finished(main_window))

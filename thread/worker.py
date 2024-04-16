@@ -6,12 +6,13 @@ class Worker(QObject):
     start_timers_signal = Signal()
     update_stylesheet_signal = Signal(QWidget, str)
 
-    def __init__(self, main_window):
+    def __init__(self, main_window, signal_manager):
         super().__init__()
         self.main_window = main_window
+        self.signal_manager = signal_manager
 
     def run(self):
         from serialcom.connect import read_serial
-        read_serial(self.main_window)
+        read_serial(self.main_window, self.signal_manager)
         self.start_timers_signal.emit()
         self.finished_signal.emit()
