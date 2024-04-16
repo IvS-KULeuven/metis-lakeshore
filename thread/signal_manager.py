@@ -2,7 +2,7 @@ from PySide6.QtCore import QObject, Signal
 
 class SignalManager(QObject):
     # Define a signal with arguments for UI update
-    update_ui_signal = Signal(str, str, str)
+    update_ui_signal = Signal(str, str, object)
 
     def update_ui(self, element_str, command, value):
         # Emit the signal with the arguments
