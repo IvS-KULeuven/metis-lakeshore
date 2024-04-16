@@ -4,7 +4,6 @@ def read_general_information(main_window, signal_manager):
         module_message = "MODNAME?\n"
         main_window.ser.write(module_message.encode())
         module_name = main_window.ser.read(1024).decode().strip()
-        # main_window.general_ui.module_name_label.setText(module_name)
         signal_manager.update_ui("general_ui.module_name_label", "setText", module_name)
 
         # Send command to get general information
@@ -18,14 +17,12 @@ def read_general_information(main_window, signal_manager):
         # Update labels with general information
         signal_manager.update_ui("general_ui.serial_number_label", "setText", components[2])
         signal_manager.update_ui("general_ui.firmware_version_label", "setText", components[3])
-        # main_window.general_ui.serial_number_label.setText(components[2])
-        # main_window.general_ui.firmware_version_label.setText(components[3])
 
     except Exception as e:
         print(f"Error: {e}")
 
 
-def read_brightness(main_window):
+def read_brightness(main_window, signal_manager):
     try:
         # Retrieve and display brightness
         message = "BRIGT?\n"
@@ -33,7 +30,7 @@ def read_brightness(main_window):
         brightness_value = int(main_window.ser.read(1024).decode().strip())
 
         # Set the current index of the combo box based on the brightness value
-        main_window.general_ui.brightness_combobox.setCurrentIndex(brightness_value)
+        signal_manager.update_ui("general_ui.brightness_combobox", "setCurrentIndex", brightness_value)
 
     except Exception as e:
         print(f"Error: {e}")
