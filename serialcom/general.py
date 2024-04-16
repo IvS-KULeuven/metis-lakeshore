@@ -1,10 +1,11 @@
-def read_general_information(main_window):
+def read_general_information(main_window, signal_manager):
     try:
         # Retrieve and display module name
         module_message = "MODNAME?\n"
         main_window.ser.write(module_message.encode())
         module_name = main_window.ser.read(1024).decode().strip()
-        main_window.general_ui.module_name_label.setText(module_name)
+        # main_window.general_ui.module_name_label.setText(module_name)
+        signal_manager.update_ui("general_ui.module_name_label", "setText", module_name)
 
         # Send command to get general information
         message = "*IDN?\n"
@@ -15,8 +16,10 @@ def read_general_information(main_window):
         components = data.split(",")
 
         # Update labels with general information
-        main_window.general_ui.serial_number_label.setText(components[2])
-        main_window.general_ui.firmware_version_label.setText(components[3])
+        signal_manager.update_ui("general_ui.serial_number_label", "setText", components[2])
+        signal_manager.update_ui("general_ui.firmware_version_label", "setText", components[3])
+        # main_window.general_ui.serial_number_label.setText(components[2])
+        # main_window.general_ui.firmware_version_label.setText(components[3])
 
     except Exception as e:
         print(f"Error: {e}")
