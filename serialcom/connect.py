@@ -83,8 +83,8 @@ def read_serial(main_window, signal_manager):
             read_input_names(main_window, signal_manager)
             read_curves(main_window, signal_manager)
             read_sensor_setup(main_window, signal_manager)
-            # read_temperature(main_window)
-            # read_sensor_units(main_window)
+            read_temperature(main_window, signal_manager)
+            read_sensor_units(main_window, signal_manager)
         except Exception as e:
             print(f"Error: {e}")
     
