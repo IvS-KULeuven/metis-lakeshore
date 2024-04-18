@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtCore import QThread
 
-def read_temperature(main_window):
+def read_temperature(main_window, signal_manager):
     try:
         # Write data to the port to ask temperature in Kelvin
         message = "KRDG? 0\n"
@@ -34,14 +35,16 @@ def read_temperature(main_window):
                             formatted_temp = "S.UNDER"
                         case "128":
                             formatted_temp = "S.OVER"
-                main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K')))
+                # main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(formatted_temp if formatted_temp != '0.00000 K' else '0 K'))
             else:
-                main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 1, QTableWidgetItem("")))
+                # main_window.temperature_ui.table.setItem(row, 1, QTableWidgetItem(""))
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"read_temperature Error: {e}")
 
-def read_sensor_units(main_window):
+def read_sensor_units(main_window, signal_manager):
     try:
         # Write query to the port to ask sensor units
         message = "SRDG? 0\n"
@@ -63,18 +66,19 @@ def read_sensor_units(main_window):
                     unit = unit + " V"
                 else:
                     unit = unit + " Ω"
-                main_window.temperature_ui.table.setItem(row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0'))
-                set_excitation(main_window,row)
-                calculate_power(main_window,row)
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 2, QTableWidgetItem(unit if (unit != '0.000 V' and unit != '0.000 Ω') else '0')))
+                set_excitation(main_window, signal_manager, row)
+                QThread.sleep(1)
+                calculate_power(main_window, signal_manager, row)
             else:
-                main_window.temperature_ui.table.setItem(row, 2, QTableWidgetItem(""))
-                main_window.temperature_ui.table.setItem(row, 3, QTableWidgetItem(""))
-                main_window.temperature_ui.table.setItem(row, 4, QTableWidgetItem(""))
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 2, QTableWidgetItem("")))
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 3, QTableWidgetItem("")))
+                signal_manager.update_ui("temperature_ui.table", "setItem", (row, 4, QTableWidgetItem("")))
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"read_sensor_units Error: {e}")
 
-def calculate_power(main_window, row):
+def calculate_power(main_window, signal_manager, row):
     try:
         sensor_text = main_window.temperature_ui.table.item(row, 2).text()
         excitation_text =main_window.temperature_ui.table.item(row, 3).text()
@@ -119,16 +123,16 @@ def calculate_power(main_window, row):
         # Multiply the number by the appropriate multiplier
         adjusted_num = power_value * multiplier
         power = str(round(adjusted_num, 2)) + power_unit
-        main_window.temperature_ui.table.setItem(row, 4, QTableWidgetItem(power))
+        signal_manager.update_ui("temperature_ui.table", "setItem", (row, 4, QTableWidgetItem(power)))
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"calculate_power Error: {e}")
 
-def set_excitation(main_window, row):
+def set_excitation(main_window, signal_manager, row):
     range_combo_box = main_window.sensor_ui.layout.itemAtPosition(row+1, 5).widget()
     excitation = range_combo_box.currentText()
     # Extracting the part between parentheses
     start_index = excitation.find('(') + 1
     end_index = excitation.find(')', start_index)
     parsed_excitation = excitation[start_index:end_index]
-    main_window.temperature_ui.table.setItem(row, 3, QTableWidgetItem(parsed_excitation))
+    signal_manager.update_ui("temperature_ui.table", "setItem", (row, 3, QTableWidgetItem(parsed_excitation)))

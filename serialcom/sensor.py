@@ -13,9 +13,6 @@ def read_input_names(main_window, signal_manager):
     except Exception as e:
         print(f"Error: {e}")
 
-def update_widget_stylesheet(main_window, widget, stylesheet):
-    main_window.worker.update_stylesheet_signal.emit(widget, stylesheet)
-
 def read_sensor_setup(main_window, signal_manager):
     try:
         for row in range(8):

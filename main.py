@@ -53,11 +53,11 @@ class MainWindow(QWidget):
 
         # Create the timers for reading temperature and sensor units
         self.temp_timer = QTimer(self)
-        self.temp_timer.setInterval(10000)  # Update every 10 seconds
-        self.temp_timer.timeout.connect(lambda: read_temperature(self))
+        self.temp_timer.setInterval(2000)  # Update every 10 seconds
+        self.temp_timer.timeout.connect(lambda: read_temperature(self, signal_manager))
         self.sensor_timer = QTimer(self)
-        self.sensor_timer.setInterval(10000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(lambda: read_sensor_units(self))
+        self.sensor_timer.setInterval(2000)  # Update every 10 seconds
+        self.sensor_timer.timeout.connect(lambda: read_sensor_units(self, signal_manager))
 
     def update_ui_slot(self, element_str, command, value):
         # Convert the string identifier to the correct UI element reference
