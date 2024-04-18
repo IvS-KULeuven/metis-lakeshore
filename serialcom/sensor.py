@@ -1,15 +1,15 @@
 from PySide6.QtWidgets import QTableWidgetItem
 
-def read_input_names(main_window):
+def read_input_names(main_window, signal_manager):
     try:
         for row in range(8):
             input_number = row + 1
             message = f"INNAME? {input_number}\n"
             main_window.ser.write(message.encode())
             name = main_window.ser.read(1024).decode().strip()
-            main_window.temperature_ui.table.setItem(row, 0, QTableWidgetItem(name))
-            main_window.sensor_ui.name_line_edits[row].setText(name)
-            main_window.curve_ui.name_labels[row].setText(name)
+            signal_manager.update_ui("temperature_ui.table", "setItem", (row, 0, QTableWidgetItem(name)))
+            signal_manager.update_ui(f"sensor_ui.name_line_edits[{row}]", "setText", name)
+            signal_manager.update_ui(f"curve_ui.name_labels[{row}]", "setText", name)
     except Exception as e:
         print(f"Error: {e}")
 
