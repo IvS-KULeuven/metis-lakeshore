@@ -67,6 +67,8 @@ class MainWindow(QWidget):
         if command == "setItem":
             row, column, item = value
             getattr(ui_element, command)(row, column, item)
+        elif command == "clear":
+            ui_element.clear()
         else:
             getattr(ui_element, command)(value)
 
