@@ -1,6 +1,10 @@
 from PySide6.QtWidgets import QTableWidgetItem
 from PySide6.QtCore import QThread
 
+def read_readings(main_window, signal_manager):
+    read_temperature(main_window, signal_manager)
+    read_sensor_units(main_window, signal_manager)
+
 def read_temperature(main_window, signal_manager):
     try:
         # Write data to the port to ask temperature in Kelvin

@@ -38,6 +38,10 @@ class MainWindow(QWidget):
         self.worker = None
         self.worker_thread = None
 
+        # Initialize timer_worker and thread
+        self.timer_worker = None
+        self.timer_worker_thread = None
+
         signal_manager = SignalManager()
 
         # Connect the signal to a slot for updating the UI
@@ -50,14 +54,6 @@ class MainWindow(QWidget):
 
         # Call the function to search for connected devices
         find_connected_devices(self)
-
-        # Create the timers for reading temperature and sensor units
-        self.temp_timer = QTimer(self)
-        self.temp_timer.setInterval(2000)  # Update every 10 seconds
-        self.temp_timer.timeout.connect(lambda: read_temperature(self, signal_manager))
-        self.sensor_timer = QTimer(self)
-        self.sensor_timer.setInterval(2000)  # Update every 10 seconds
-        self.sensor_timer.timeout.connect(lambda: read_sensor_units(self, signal_manager))
 
     def update_ui_slot(self, element_str, command, value):
         # Convert the string identifier to the correct UI element reference

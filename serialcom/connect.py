@@ -4,9 +4,9 @@ from serialcom.general import read_general_information, read_brightness, handle_
 from serialcom.profibus import read_address, read_slot_count, read_slots, handle_address_change, handle_slot_count_change, profibus_connect_combobox
 from serialcom.sensor import read_input_names, read_sensor_setup, sensor_connect_type_combobox, sensor_connect_name_edit, sensor_connect_power_combobox, sensor_connect_combobox
 from serialcom.curve import read_curves, curve_connect_delete_button, curve_connect_curve_combobox
-from serialcom.temperature import read_temperature, read_sensor_units
 from PySide6.QtCore import QThread
 from thread.worker import Worker
+from thread.timer_worker import TimerWorker
 
 def find_connected_devices(main_window):
         try:
@@ -38,9 +38,14 @@ def handle_disconnect(main_window):
     if main_window.ser == '':
         return
     try:
+        # Perform cleanup when the temperature_worker has finished its task
+        if main_window.timer_worker_thread and main_window.timer_worker_thread.isRunning():
+            main_window.timer_worker_thread.quit()
+            main_window.timer_worker_thread.wait()
+            main_window.timer_worker_thread = None
+            main_window.timer_worker = None
+
         main_window.ser.close()
-        main_window.temp_timer.stop()
-        main_window.sensor_timer.stop()
         
         # Disconnect signals
         main_window.general_ui.module_name_label.editingFinished.disconnect()
@@ -83,13 +88,11 @@ def read_serial(main_window, signal_manager):
             read_input_names(main_window, signal_manager)
             read_curves(main_window, signal_manager)
             read_sensor_setup(main_window, signal_manager)
-            read_temperature(main_window, signal_manager)
-            read_sensor_units(main_window, signal_manager)
         except Exception as e:
             print(f"Error: {e}")
     
 
-def connect_signals(main_window):
+def connect_signals(main_window, signal_manager):
     try:
         # Connect signals
         main_window.general_ui.module_name_label.editingFinished.connect(lambda: handle_module_name_change(main_window))
@@ -112,8 +115,7 @@ def connect_signals(main_window):
             sensor_connect_combobox(main_window.sensor_ui.display_units_comboboxes[i], main_window, i)
             curve_connect_delete_button(main_window.curve_ui.delete_buttons[i], main_window, i)
             curve_connect_curve_combobox(main_window.curve_ui.curve_comboboxes[i], main_window, i)
-    
-        main_window.connection_ui.status_label.setText("<b>Status: </b>        Connected")
+        signal_manager.update_ui("connection_ui.status_label", "setText", "<b>Status: </b>        Connected")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -124,14 +126,14 @@ def handle_connect(main_window, signal_manager):
             main_window.worker = Worker(main_window, signal_manager)
             main_window.worker_thread = QThread()
             main_window.worker.moveToThread(main_window.worker_thread)
-            main_window.worker.finished_signal.connect(lambda: handle_worker_finished(main_window))
+            main_window.worker.finished_signal.connect(lambda: handle_worker_finished(main_window, signal_manager))
             main_window.worker_thread.started.connect(main_window.worker.run)
-            main_window.worker.start_timers_signal.connect(lambda: start_timers(main_window))
+            main_window.worker.start_timers_signal.connect(lambda: start_timer(main_window, signal_manager))
             main_window.worker_thread.start()
     except Exception as e:
         print(f"Error: {e}")
 
-def handle_worker_finished(main_window):
+def handle_worker_finished(main_window, signal_manager):
     try:
         # Perform cleanup when the worker has finished its task
         if main_window.worker_thread and main_window.worker_thread.isRunning():
@@ -139,10 +141,14 @@ def handle_worker_finished(main_window):
             main_window.worker_thread.wait()
             main_window.worker_thread = None
             main_window.worker = None
-        connect_signals(main_window)
+        connect_signals(main_window, signal_manager)
     except Exception as e:
         print(f"Error: {e}")
 
-def start_timers(main_window):
-    main_window.temp_timer.start()
-    main_window.sensor_timer.start()
+def start_timer(main_window, signal_manager):
+    # Create new timer_worker and thread
+    main_window.timer_worker = TimerWorker(main_window, signal_manager)
+    main_window.timer_worker_thread = QThread()
+    main_window.timer_worker.moveToThread(main_window.timer_worker_thread)
+    main_window.timer_worker_thread.started.connect(main_window.timer_worker.run)
+    main_window.timer_worker_thread.start()
