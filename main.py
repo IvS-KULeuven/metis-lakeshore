@@ -64,7 +64,11 @@ class MainWindow(QWidget):
         ui_element = self.find_ui_element(element_str)
 
         # Perform UI update safely
-        getattr(ui_element, command)(value)
+        if command == "setItem":
+            row, column, item = value
+            getattr(ui_element, command)(row, column, item)
+        else:
+            getattr(ui_element, command)(value)
 
     def find_ui_element(self, element_str):
         full_element_str = "self." + element_str
