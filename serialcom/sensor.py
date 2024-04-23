@@ -203,6 +203,9 @@ def handle_power_change(main_window, combobox, i):
         if selected_power_state == "On":
             # Diode
             if type == 1:
+                range_combo_box.clear()
+                range_combo_box.addItems(["7.5 V (10 µA)"])
+                range_combo_box.setEnabled(False)  # Disable range
                 for col in range(2, 7):
                     widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
                     if col in [2, 6]:  # Type and Display Units columns
@@ -210,6 +213,9 @@ def handle_power_change(main_window, combobox, i):
                         widget.setStyleSheet("")
             # Platinum RTD
             elif type == 2:
+                range_combo_box.clear()
+                range_combo_box.addItems(["1 kΩ (1 mA)"])
+                range_combo_box.setEnabled(False)  # Disable range
                 for col in range(2, 7):
                     widget = main_window.sensor_ui.layout.itemAtPosition(row, col).widget()
                     if col in [2, 3, 6]:  # Type, Current Reversal, and Display Units columns
